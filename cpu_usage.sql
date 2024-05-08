@@ -1,8 +1,6 @@
 --CREATE DATABASE homework;
 -- \c homework
 
-DROP TABLE cpu_usage;
-
 CREATE EXTENSION IF NOT EXISTS timescaledb;
 
 CREATE TABLE cpu_usage(

@@ -4,7 +4,7 @@ set -euo pipefail
 
 connectionStr="postgres://$DB_USER:$DB_PASS@aqadz0sy32.tzug8uusr7.tsdb.cloud.timescale.com:39894/tsdb?sslmode=require"
 
-# Setup db
+# Setup schema
 psql $connectionStr -f cpu_usage.sql
 
 # Insert data from CSV
