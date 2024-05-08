@@ -3,7 +3,7 @@
 
 CREATE EXTENSION IF NOT EXISTS timescaledb;
 
-CREATE TABLE cpu_usage(
+CREATE TABLE IF NOT EXISTS cpu_usage(
   ts    TIMESTAMPTZ,
   host  TEXT,
   usage DOUBLE PRECISION

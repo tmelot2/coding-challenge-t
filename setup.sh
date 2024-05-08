@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-connectionStr="postgres://$DB_USER:$DB_PASS@aqadz0sy32.tzug8uusr7.tsdb.cloud.timescale.com:39894/tsdb?sslmode=require"
+connectionStr="postgres://$DB_USER:$DB_PASS@$DB_URL/$DB_DATABASE?$DB_OPTIONS"
 
 # Setup schema
 psql $connectionStr -f cpu_usage.sql

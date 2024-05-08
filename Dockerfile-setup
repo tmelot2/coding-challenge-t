@@ -5,6 +5,9 @@ WORKDIR /app
 # Postgres username & password
 ENV DB_USER=
 ENV DB_PASS=
+ENV DB_URL=
+ENV DB_DATABASE=tsdb
+ENV DB_OPTIONS=sslmode=require
 
 # Add setup script & exec permission
 ADD setup.sh /app
