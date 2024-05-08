@@ -1,0 +1,18 @@
+FROM postgres:16
+
+WORKDIR /app
+
+# Postgres username & password
+ENV DB_USER=
+ENV DB_PASS=
+
+# Add setup script & exec permission
+ADD setup.sh /app
+RUN chmod +x setup.sh
+
+# Add SQL setup script & data file
+ADD cpu_usage.sql /app
+ADD cpu_usage.csv /app
+
+# Run!
+CMD ["bash", "/app/setup.sh"]
