@@ -14,10 +14,15 @@ Once your TimescaleDB instance is ready ([link to official Getting Started docs]
 
 2) Run `$ make setup`
 
-## TODO
+## TODO / Questions
 
 [ ] Create `homework` db. Getting error on create:
 	```
 	ERROR:  tsdb_admin: database homework is not an allowed database name
 	HINT:  Contact your administrator to configure the "tsdb_admin.allowed_databases"
 	```
+
+[ ] Are ranges inclusive or exclusive on either end?
+	- DOC THIS ANSWER IN HERE! It's important to know that when using the tool.
+
+[ ] Ok to require Docker on client that is used as part of project setup? (To avoid installing Postgres locally)

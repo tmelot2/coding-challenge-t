@@ -6,6 +6,7 @@ WORKDIR /app
 ENV DB_USER=
 ENV DB_PASS=
 ENV DB_URL=
+# TODO: Pull from .env file
 ENV DB_DATABASE=tsdb
 ENV DB_OPTIONS=sslmode=require
 
