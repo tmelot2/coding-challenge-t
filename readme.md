@@ -2,19 +2,48 @@
 
 CLI tool used to benchmark `SELECT` query performance against a TimescaleDB instance.
 
-## How To Use
 
-### Setup
+## Requirements
 
-Once your TimescaleDB instance is ready ([link to official Getting Started docs](https://docs.timescale.com/getting-started/latest/)), you can use `make` to build & run a Docker container which connects to the instance & sets up schema & data.
+- An existing TimescaleDB instance.
+- Local install of Docker to run the database setup container.
+- Make
+- Go
 
-1) Edit `Dockerfile-setup` & fill in connection details.
+Project was developed on MacOS 13.6.6, Go 1.22.1, Make 3.81, Docker 26.0.0.
+
+
+## Setup
+
+This tool uses Docker to run a Postgres client that connects to the db & sets up the schema + data.
+
+1) Start TimescaleDB instance ([link to official Getting Started docs](https://docs.timescale.com/getting-started/latest/)).
+
+2) Edit `Dockerfile-setup` & fill in connection details.
+
+	> TODO: Prolly moving those values to .env file.
 
 	> NOTE: Storing credentials in a plaintext file is **not** something I would do in production code. Ideally I would encrypt & store this data in a secrets manager, use more appropriate priviledges or a service account, & other security best practices.
 
-2) Run `$ make setup`
+3) Run `$ make setup`
 
-## TODO / Questions
+
+## Run
+
+This tool supports 2 modes:
+
+
+### Mode 1: Load queries from CSV file.
+
+1) `$ make run`
+
+> TODO: More, input file, concurrency
+
+### Mode 2: Interactive via stdin
+> TODO: More, concurrency
+
+
+## Todo & Questions
 
 [ ] Create `homework` db. Getting error on create:
 	```
