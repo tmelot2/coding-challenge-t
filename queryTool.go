@@ -13,24 +13,27 @@ import (
 
 import _ "github.com/lib/pq"
 
+
 // Duration is sortable because it adheres to sort interface
 type Duration []time.Duration
 func (d Duration) Len() int       	  { return len(d) }
 func (d Duration) Less(i, j int) bool { return d[i] < d[j] }
 func (d Duration) Swap(i, j int)	  { d[i], d[j] = d[j], d[i] }
 
-// TODO: Doc
+// QueryTool is used to run benchmarked queries against the TimescaleDB instance.
 type QueryTool struct {
 	queryTimes []time.Duration
 }
 
-// TODO: Doc
+// Returns an instance of QueryTool.
 func newQueryTool() *QueryTool {
+	// Initial capacity of 256 to avoid some append() data copying using the provided query CSV.
 	queryTool := QueryTool{make([]time.Duration, 0, 256)}
 	return &queryTool
 }
 
-// TODO: Doc
+// Reads the CSV file line-by-line, turning each line into a db query that's immediately run.
+// Keeps track of runtime as it goes & prints stats when finished.
 func (queryTool *QueryTool) RunWithCsvFile(filePath string) {
 	// Open CSV file
 	file, err := os.Open(filePath)
@@ -54,7 +57,7 @@ func (queryTool *QueryTool) RunWithCsvFile(filePath string) {
 		fmt.Println(queryTime)
 		queryTool.queryTimes = append(queryTool.queryTimes, queryTime)
 
-		fmt.Println("\n==============================\n")
+		fmt.Printf("\n%s\n", strings.Repeat("=", 30))
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -64,11 +67,14 @@ func (queryTool *QueryTool) RunWithCsvFile(filePath string) {
 	queryTool.printQueryTimeStats()
 }
 
-// TODO: Doc
+// Runs the given query in the db, prints the results, & returns the runtime of the query operation.
+// NOTE: This function assumes the query params [start,end,host], which should match up with the
+// query `query_cpuMinMaxByMin.sql`.
 func (queryTool *QueryTool) runQuery(query, start, end, host string) time.Duration {
 	conn := queryTool.getDatabaseConnection()
 	defer conn.Close()
 
+	// Run the query & time how long it takes
 	queryStart := time.Now()
 	rows, err := conn.Query(query, start, end, host)
 	queryEnd := time.Now()
@@ -79,7 +85,7 @@ func (queryTool *QueryTool) runQuery(query, start, end, host string) time.Durati
 
 	fmt.Println(host)
 
-	// ts (ts), host (str), usage (double)
+	// Print results
 	for rows.Next() {
 		var host string
 		var ts time.Time
@@ -91,13 +97,15 @@ func (queryTool *QueryTool) runQuery(query, start, end, host string) time.Durati
 			panic(err)
 		}
 
-		// fmt.Println(ts, cpuMin, cpuMax)
+		fmt.Println(ts, cpuMin, cpuMax)
 	}
 
+	// Calculate runtime & return it
 	elapsedTime := queryEnd.Sub(queryStart)
 	return elapsedTime
 }
 
+// Connects to the db & returns the connection
 // TODO: Refactor to ConnectionManager or something, & pass in a ref of that to QueryTool constructor
 func (queryTool *QueryTool) getDatabaseConnection() *sql.DB {
 	// TODO: Pull from .env file
@@ -121,7 +129,7 @@ func (queryTool *QueryTool) getDatabaseConnection() *sql.DB {
 	return conn
 }
 
-// TODO: Doc
+// Prints time stats related to how long the queries took
 func (queryTool *QueryTool) printQueryTimeStats() {
 	numQueries := len(queryTool.queryTimes)
 	// Prime min & max as 0th element
@@ -129,6 +137,7 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 	maxTime := queryTool.queryTimes[0]
 	var totalTime time.Duration
 
+	// Compute min, max, total
 	for _,t := range queryTool.queryTimes {
 		// New min / max
 		if t < minTime {
@@ -141,10 +150,10 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 		fmt.Println(t.String())
 	}
 
-	// Calculate average & median
+	// Compute average
 	avgTime := time.Duration(int64(totalTime) / int64(numQueries))
 
-	// Sort & get median
+	// Sort & compute median
 	var medianTime time.Duration
 	sort.Sort(Duration(queryTool.queryTimes))
 	if numQueries % 2 == 0 {
@@ -153,10 +162,12 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 		medianTime = queryTool.queryTimes[numQueries/2]
 	}
 
+	// TODO: Remove this
 	fmt.Println(queryTool.queryTimes)
 
-	fmt.Println("\n%s\n", strings.Repeat("=",30))
-	fmt.Printf("Queries run: %d\n", numQueries)
+	// Output
+	fmt.Printf("\n%s\n", strings.Repeat("=",30))
+	fmt.Printf("Queries run:  %d\n", numQueries)
 	fmt.Printf(" Total time: %6.3fs\n", float64(totalTime)  / float64(time.Second))
 	fmt.Printf("   Min time: %6.3fs\n", float64(minTime)   / float64(time.Second))
 	fmt.Printf("   Max time: %6.3fs\n", float64(maxTime)   / float64(time.Second))
@@ -165,7 +176,7 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 	fmt.Println("")
 }
 
-// Returns the bucket index this key hashes into for the given number of buckets
+// Returns the bucket index this key hashes into for the given number of buckets.
 func (queryTool *QueryTool) getBucketIndex(key string, numBuckets int) int {
 	h := fnv.New32a()
 	h.Write([]byte(key))
