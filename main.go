@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"database/sql"
 	"fmt"
+	"hash/fnv"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -24,16 +25,33 @@ func loadCsvFile(filePath string) {
 
 	scanner := bufio.NewScanner(file)
 	scanner.Scan() // Ignore 1st line (it's a header)
+	buckets := make(map[int]int)
 	for scanner.Scan() {
 		line := scanner.Text()
 		parts := strings.Split(line, ",")
 		host, start, end := parts[0], parts[1], parts[2]
 		fmt.Printf("%s (%s - %s)\n", host, start, end)
+
+		bucket := getBucketIndex(host, 4)
+		buckets[bucket] += 1
+	}
+
+	for k,v := range buckets {
+		fmt.Printf("Bucket %d count: %d\n", k, v)
 	}
 
 	if err := scanner.Err(); err != nil {
 		fmt.Println("Error scanning file:", err)
 	}
+}
+
+// Returns the bucket index this key hashes into for the given number of buckets
+func getBucketIndex(key string, numBuckets int) int {
+	h := fnv.New32a()
+	h.Write([]byte(key))
+	hash := h.Sum32()
+	bucket := int(hash) % numBuckets
+	return bucket
 }
 
 func connectToDatabase() *sql.DB {
@@ -68,11 +86,11 @@ func loadCpuMinMaxQuery() string {
 }
 
 func main() {
-	// loadCsvFile("query_params.csv")
+	loadCsvFile("query_params.csv")
 
-	host := "host_000010"
-	start := "2017-01-01 22:22:12"
-	end := "2017-01-01 22:24:12"
+	host := "host_000014"
+	start := "2017-01-02 22:55:00"
+	end := "2017-01-02 22:59:00"
 
 	db := connectToDatabase()
 	defer db.Close()
