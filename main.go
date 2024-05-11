@@ -28,6 +28,9 @@ func readFile(filePath string) string {
 func main() {
 	csvFilePath := "query_params_tiny.csv"
 
-	queryTool := newQueryTool()
+	queryTool := NewQueryTool()
 	queryTool.RunWithCsvFile(csvFilePath)
 }
+
+// TODO: Load env vars from .env
+// TODO: Add connection manager thingy? May not be needed

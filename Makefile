@@ -6,4 +6,4 @@ setup:
 	docker run -it --rm --name $(setupName) $(setupName)
 
 run:
-	go run main.go queryTool.go
+	go run main.go queryTool.go queue.go

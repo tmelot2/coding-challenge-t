@@ -26,7 +26,7 @@ type QueryTool struct {
 }
 
 // Returns an instance of QueryTool.
-func newQueryTool() *QueryTool {
+func NewQueryTool() *QueryTool {
 	// Initial capacity of 256 to avoid some append() data copying using the provided query CSV.
 	queryTool := QueryTool{make([]time.Duration, 0, 256)}
 	return &queryTool
@@ -46,6 +46,10 @@ func (queryTool *QueryTool) RunWithCsvFile(filePath string) {
 	// Cache query file
 	query := readFile("query_cpuMinMaxByMin.sql")
 
+	// Setup & start queue
+	queue := NewQueue()
+	go queue.Start()
+
 	// Read & process CSV line-by-line
 	scanner := bufio.NewScanner(file)
 	scanner.Scan() // Ignore 1st line (it's a header)
@@ -53,12 +57,20 @@ func (queryTool *QueryTool) RunWithCsvFile(filePath string) {
 		line := scanner.Text()
 		parts := strings.Split(line, ",")
 		host, start, end := parts[0], parts[1], parts[2]
-		queryTime := queryTool.runQuery(query, start, end, host)
+
+		// queryTime := queryTool.runQuery(query, start, end, host)
+		queryTool.runQuery(query, start, end, host)
+		queryTime := time.Duration(1*time.Second)
+
 		fmt.Println(queryTime)
 		queryTool.queryTimes = append(queryTool.queryTimes, queryTime)
 
 		fmt.Printf("\n%s\n", strings.Repeat("=", 30))
 	}
+
+	// Stop queue
+	queue.wg.Wait()
+	queue.Stop()
 
 	if err := scanner.Err(); err != nil {
 		fmt.Println("Error scanning file:", err)
@@ -169,8 +181,8 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 	fmt.Printf("\n%s\n", strings.Repeat("=",30))
 	fmt.Printf("Queries run:  %d\n", numQueries)
 	fmt.Printf(" Total time: %6.3fs\n", float64(totalTime)  / float64(time.Second))
-	fmt.Printf("   Min time: %6.3fs\n", float64(minTime)   / float64(time.Second))
-	fmt.Printf("   Max time: %6.3fs\n", float64(maxTime)   / float64(time.Second))
+	fmt.Printf("   Min time: %6.3fs\n", float64(minTime)    / float64(time.Second))
+	fmt.Printf("   Max time: %6.3fs\n", float64(maxTime)    / float64(time.Second))
 	fmt.Printf("   Avg time: %6.3fs\n", float64(avgTime)    / float64(time.Second))
 	fmt.Printf("Median time: %6.3fs\n", float64(medianTime) / float64(time.Second))
 	fmt.Println("")
