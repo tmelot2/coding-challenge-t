@@ -1,11 +1,11 @@
 package main
 
 import (
-	// "fmt"
 	"sync"
 	"time"
 )
 
+// Job holds necessary data to run a db query, including a ref to the query function.
 type Job struct {
 	Start string
 	End   string
@@ -13,12 +13,14 @@ type Job struct {
 	F func(start,end,host string) time.Duration
 }
 
+// Queue keeps track of running jobs.
 type Queue struct {
 	jobs chan Job
 	stop chan struct {}
 	wg   sync.WaitGroup
 }
 
+// Returns an empty queue.
 func NewQueue() *Queue {
 	return &Queue {
 		jobs: make(chan Job),
@@ -26,6 +28,7 @@ func NewQueue() *Queue {
 	}
 }
 
+// Starts the queue, runs until the stop channel gets a signal.
 func (q *Queue) Start() {
 	for {
 		select {
@@ -38,33 +41,19 @@ func (q *Queue) Start() {
 	}
 }
 
+// Tells the queue wait group to wait
 func (q *Queue) Wait() {
 	q.wg.Wait()
 }
 
+// Stops all channels in the queue
 func (q *Queue) Stop() {
-	q.wg.Wait()
 	close(q.jobs)
 	close(q.stop)
 }
 
+// Adds a new job to the queue to be run
 func (q *Queue) Enqueue(job Job) {
 	q.wg.Add(1)
 	q.jobs <- job
 }
-
-// func processJob(q *Queue, job Job) {
-// 	defer q.wg.Done()
-// 	job.F(job.Start, job.End, job.Host)
-// }
-
-// func main() {
-// 	count := 3
-// 	queue := NewQueue()
-// 	go queue.Start()
-// 	for i := 0; i < count; i++ {
-// 		queue.Enqueue(i)
-// 	}
-// 	queue.wg.Wait()
-// 	queue.Stop()
-// }

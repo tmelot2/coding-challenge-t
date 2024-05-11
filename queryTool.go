@@ -104,10 +104,10 @@ func (queryTool *QueryTool) RunWithCsvFile(filePath string) {
 		// queryTool.runQuery(query, start, end, host)
 		queue := queryTool.getQueue(host)
 		queue.Enqueue(Job{start, end, host, queryTool.runQuery})
-		queryTime := time.Duration(1*time.Second)
+		// queryTime := time.Duration(1*time.Second)
 
 		// fmt.Println(queryTime)
-		queryTool.queryTimes = append(queryTool.queryTimes, queryTime)
+		// queryTool.queryTimes = append(queryTool.queryTimes, queryTime)
 
 		// fmt.Printf("\n%s\n", strings.Repeat("=", 30))
 	}
@@ -184,6 +184,8 @@ func (queryTool *QueryTool) runQuery(start, end, host string) time.Duration {
 
 	// Calculate runtime & return it
 	elapsedTime := queryEnd.Sub(queryStart)
+	fmt.Printf("Query for host %s at %s took %s\n", host, start, elapsedTime)
+	queryTool.queryTimes = append(queryTool.queryTimes, elapsedTime)
 	return elapsedTime
 }
 
@@ -250,6 +252,7 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 
 	// Output
 	fmt.Printf("\n%s\n", strings.Repeat("=",30))
+	fmt.Printf("Concurrency:  %d\n", len(queryTool.multiQueue))
 	fmt.Printf("Queries run:  %d\n", numQueries)
 	fmt.Printf(" Total time: %6.3fs\n", float64(totalTime)  / float64(time.Second))
 	fmt.Printf("   Min time: %6.3fs\n", float64(minTime)    / float64(time.Second))
