@@ -3,13 +3,14 @@ package main
 import (
 	// "fmt"
 	"sync"
+	"time"
 )
 
 type Job struct {
-	query string
-	start string
-	end   string
-	host  string
+	Start string
+	End   string
+	Host  string
+	F func(start,end,host string) time.Duration
 }
 
 type Queue struct {
@@ -28,17 +29,21 @@ func NewQueue() *Queue {
 func (q *Queue) Start() {
 	for {
 		select {
-		case job := <-q.jobs:
-			go func(job Job) {
-				processJob(q, job)
-			} (job)
-		case <-q.stop:
+		case job := <- q.jobs:
+			job.F(job.Start, job.End, job.Host)
+			q.wg.Done()
+		case <- q.stop:
 			return
 		}
 	}
 }
 
+func (q *Queue) Wait() {
+	q.wg.Wait()
+}
+
 func (q *Queue) Stop() {
+	q.wg.Wait()
 	close(q.jobs)
 	close(q.stop)
 }
@@ -48,9 +53,10 @@ func (q *Queue) Enqueue(job Job) {
 	q.jobs <- job
 }
 
-func processJob(q *Queue, job Job) {
-	defer q.wg.Done()
-}
+// func processJob(q *Queue, job Job) {
+// 	defer q.wg.Done()
+// 	job.F(job.Start, job.End, job.Host)
+// }
 
 // func main() {
 // 	count := 3
