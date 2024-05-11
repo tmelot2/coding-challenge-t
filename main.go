@@ -28,7 +28,7 @@ func readFile(filePath string) string {
 func main() {
 	csvFilePath := "query_params_tiny.csv"
 
-	queryTool := NewQueryTool(8)
+	queryTool := NewQueryTool(10)
 	queryTool.RunWithCsvFile(csvFilePath)
 }
 

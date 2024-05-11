@@ -28,6 +28,11 @@ type QueryTool struct {
 
 // Returns an instance of QueryTool.
 func NewQueryTool(concurrency uint) *QueryTool {
+	if concurrency <= 0 {
+		fmt.Printf("Concurrency <= 0 (is %d), setting to 1\n", concurrency)
+		concurrency = 1
+	}
+
 	// Create multi-queue
 	queues := make([]*Queue, 0, concurrency)
 	for i := 0; i < int(concurrency); i++ {
@@ -119,6 +124,9 @@ func (queryTool *QueryTool) RunWithCsvFile(filePath string) {
 
 	   In this case, none of those resources are used again & the program exists shortly after, so there's no real bad effect of
 	   commenting this out, as far as I understand.
+
+	   I tested running it with the -race flag, but it didn't find anything (& I think that tool may be more for when modifying
+	   shared data & such).
 	*/
 	// Stop all queues in the multiqueue
 	// queryTool.stopMultiQueue()
@@ -140,7 +148,14 @@ func (queryTool *QueryTool) runQuery(start, end, host string) time.Duration {
 	// Run the query & time how long it takes
 	queryStart := time.Now()
 	fmt.Printf("%s query start %s\n", host, time.Now())
-	rows, err := conn.Query(query, start, end, host)
+
+	stmt, err := conn.Prepare(query)
+	if err != nil {
+		panic(err)
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query(start, end, host)
+
 	fmt.Printf("%s query end   %s\n", host, time.Now())
 	queryEnd := time.Now()
 	if err != nil {
@@ -176,10 +191,11 @@ func (queryTool *QueryTool) runQuery(start, end, host string) time.Duration {
 // TODO: Refactor to ConnectionManager or something, & pass in a ref of that to QueryTool constructor
 func (queryTool *QueryTool) getDatabaseConnection() *sql.DB {
 	// TODO: Pull from .env file
+	// postgres://tsdbadmin@aqadz0sy32.tzug8uusr7.tsdb.cloud.timescale.com:31633/tsdb?sslmode=require
 	username := "tsdbadmin"
 	password := "oda9b95cubho3tqq"
-	host := "aqadz0sy32.tzug8uusr7.tsdb.cloud.timescale.com:39894"
-	db := "tsdb"
+	host := "aqadz0sy32.tzug8uusr7.tsdb.cloud.timescale.com:31633"
+	db := "tsdb_transaction"
 	args := "sslmode=require"
 
 	connectionString := fmt.Sprintf("postgres://%s:%s@%s/%s?%s", username, password, host, db, args)

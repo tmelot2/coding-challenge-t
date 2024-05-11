@@ -45,6 +45,9 @@ This tool supports 2 modes:
 
 ## Todo & Questions
 
+[ ] TODO: BUCKETING BY HASH OF HOSTNAME REDUCES PARALLELISM BECAUSE WE ONLY GET AS MANY BUCKETS AS UNIQUE HOSTNAMES
+	- Therefore, host 0 to 9 = 10 hosts, so 10 buckets. Repeat hosts read from the file bucket behind previous requests, so they're stuck waiting.
+
 [ ] Create `homework` db. Getting error on create:
 	```
 	ERROR:  tsdb_admin: database homework is not an allowed database name
@@ -53,5 +56,7 @@ This tool supports 2 modes:
 
 [ ] Are ranges inclusive or exclusive on either end?
 	- DOC THIS ANSWER IN HERE! It's important to know that when using the tool.
+
+[ ] Is it correct that we don't output query results, just benchmark results?
 
 [ ] Ok to require Docker on client that is used as part of project setup? (To avoid installing Postgres locally)
