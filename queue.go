@@ -36,8 +36,8 @@ func (q *Queue) Start() {
 		select {
 		case job := <- q.jobs:
 			elapsedTime := job.f(job)
-			q.wg.Done()
 			fmt.Printf("Job %d: Finished %s at %s, took %s\n", job.jobNum, job.host, time.Now(), elapsedTime)
+			q.wg.Done()
 		case <- q.stop:
 			return
 		}

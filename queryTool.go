@@ -228,9 +228,6 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 	// Compute average
 	avgTime := time.Duration(int64(totalTime) / int64(numQueries))
 
-	// TODO: Remove this
-	fmt.Println("Pre-sorted query times:", queryTool.queryTimes)
-
 	// Sort & compute median
 	var medianTime time.Duration
 	sort.Sort(Duration(queryTool.queryTimes))
@@ -240,9 +237,6 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 		medianTime = queryTool.queryTimes[numQueries/2]
 	}
 	fmt.Println("Sorted query times:", queryTool.queryTimes)
-
-	// TODO: Remove this
-	// fmt.Println(queryTool.queryTimes)
 
 	// Output
 	fmt.Printf("\n%s\n", strings.Repeat("=",30))
