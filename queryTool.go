@@ -21,7 +21,12 @@ func (d Duration) Len() int       	  { return len(d) }
 func (d Duration) Less(i, j int) bool { return d[i] < d[j] }
 func (d Duration) Swap(i, j int)	  { d[i], d[j] = d[j], d[i] }
 
-// QueryTool is used to run benchmarked queries against the TimescaleDB instance.
+/*
+   QueryTool is used to run benchmarked queries against the TimescaleDB instance.
+
+   It uses an async worker multiqueue (with size of input concurrency) to run queries.
+   Jobs are consistently hashed into one of the queues when they are added.
+*/
 type QueryTool struct {
 	multiQueue []*Queue
 	queryTimes []time.Duration
@@ -41,7 +46,7 @@ func NewQueryTool(concurrency uint) *QueryTool {
 		queues = append(queues, NewQueue())
 	}
 
-	// Create self
+	// Create QueryTool instance
 	// Initial capacity of 256 to avoid some append() data copying using the provided query CSV.
 	queryTool := QueryTool{queues, make([]time.Duration, 0, 256), sync.Mutex{}}
 
@@ -53,9 +58,11 @@ func NewQueryTool(concurrency uint) *QueryTool {
 
 // Returns the queue this key hashes into.
 func (queryTool *QueryTool) getQueue(key string) *Queue {
+	// Hash key (the hostname) & cast to int
 	h := fnv.New32a()
 	h.Write([]byte(key))
 	hash := h.Sum32()
+	// Get the queue # it will use
 	bucket := int(hash) % len(queryTool.multiQueue)
 	return queryTool.multiQueue[bucket]
 }

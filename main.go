@@ -33,4 +33,5 @@ func main() {
 }
 
 // TODO: Load env vars from .env
-// TODO: Add connection manager thingy? May not be needed
+// TODO: Read concurrency from args
+// TODO: Read input file from args, but default to query_params.csv

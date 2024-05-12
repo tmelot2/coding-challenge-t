@@ -51,7 +51,16 @@ This tool supports 2 modes:
 
 [ ] TODO: BUCKETING BY HASH OF HOSTNAME REDUCES PARALLELISM BECAUSE WE ONLY GET AS MANY BUCKETS AS UNIQUE HOSTNAMES
 	- Therefore, host 0 to 9 = 10 hosts, so 10 buckets. Repeat hosts read from the file bucket behind previous requests, so they're stuck waiting.
-	- It's like we actually need "queries per second" or something
+	- A round robin, lru, or "choose empty queue" method would provide increased performance
+		- I tested round robin and got these results with 200 queries:
+			- Concurrency   5: 8.2s, avg 0.06s
+			- Concurrency  25: 3.1s, avg 0.11s
+			- Concurrency  50: 2.9s, avg 0.18s
+			- Concurrency 100: 3.0s, avg 0.4s
+			- Concurrency 200: 2.9s, avg 0.6s
+		- Compared against bucketing, which maxes at 10
+			- Concurrency   5: 15s, avg 0.07s
+			- Concurrency  10: 11s, avg 0.07s
 
 [ ] "Total time" doesn't really make sense: Concurrency 10 yields 8 queries that ran for 1.7s, even though they ran at the same time
 	- Therefore, average against the sum doesn't make sense. Should avg be something else?

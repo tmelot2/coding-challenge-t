@@ -52,20 +52,20 @@ func (q *Queue) Wait() {
 // Stops all channels in the queue
 func (q *Queue) Stop() {
 	/*
-	  NOTE: We *must* close stop chan before jobs chan, or else it will error with a nil pointer
-	  dereference. I burned a LOT of time trying to figure that out.
+	   NOTE: We *must* close stop chan before jobs chan, or else it will error with a nil pointer
+	   dereference. I burned a LOT of time trying to figure that out.
 
-	  When it's reversed, it errors on
+	   When it's reversed, it errors on
 
-	  	Start(): elapsedTime := job.f(job)
+	  	 Start(): elapsedTime := job.f(job)
 
-	  Stop() only runs after Wait() has been called, ensuring that all jobs are finished. This
-	  implies no new jobs are coming in. However that line runs with nil jobs, hence the error.
+	   Stop() only runs after Wait() has been called, ensuring that all jobs are finished. This
+	   implies no new jobs are coming in. However that line runs with nil jobs, hence the error.
 
-	  I think it makes sense to send the stop close signal 1st so the Start() goroutine returns & ends.
-	  This way, additional jobs that come in will be ignored, because nothing is watching the
-	  channel anymore. Where I'm still a little confused is there shouldn't *be* additional jobs,
-	  because we already waited on all the work to finish.
+	   I think it makes sense to send the stop close signal 1st so the Start() goroutine returns & ends.
+	   This way, additional jobs that come in will be ignored, because nothing is watching the
+	   channel anymore. Where I'm still a little confused is there shouldn't *be* additional jobs,
+	   because we already waited on all the work to finish.
 	*/
 	close(q.stop)
 	close(q.jobs)
