@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Sets up schema + data on Postgres server.
+
 set -euo pipefail
 
 connectionStr="postgres://$DB_USER:$DB_PASS@$DB_URL/$DB_DATABASE?$DB_OPTIONS"
