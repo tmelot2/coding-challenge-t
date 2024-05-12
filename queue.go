@@ -1,17 +1,18 @@
 package main
 
 import (
-	// "fmt"
+	"fmt"
 	"sync"
 	"time"
 )
 
 // Job holds necessary data to run a db query, including a ref to the query function.
 type Job struct {
-	Start string
-	End   string
-	Host  string
-	F func(start,end,host string) time.Duration
+	start  string
+	end    string
+	host   string
+	f func(job Job) time.Duration
+	jobNum int
 }
 
 // Queue keeps track of running jobs.
@@ -34,8 +35,9 @@ func (q *Queue) Start() {
 	for {
 		select {
 		case job := <- q.jobs:
-			job.F(job.Start, job.End, job.Host)
+			elapsedTime := job.f(job)
 			q.wg.Done()
+			fmt.Printf("Job %d: Finished %s at %s, took %s\n", job.jobNum, job.host, time.Now(), elapsedTime)
 		case <- q.stop:
 			return
 		}
@@ -49,12 +51,17 @@ func (q *Queue) Wait() {
 
 // Stops all channels in the queue
 func (q *Queue) Stop() {
-	close(q.jobs)
+	/*
+	  NOTE: We *must* close stop chan before jobs chan, or else it will error with a nil pointer
+	  dereference. I burned a LOT of time trying to figure that out.
+	*/
 	close(q.stop)
+	close(q.jobs)
 }
 
 // Adds a new job to the queue to be run
 func (q *Queue) Enqueue(job Job) {
 	q.wg.Add(1)
+	fmt.Printf("Job %d: Submitting %s at %s\n", job.jobNum, job.host, time.Now())
 	q.jobs <- job
 }

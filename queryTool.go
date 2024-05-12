@@ -8,6 +8,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -24,6 +25,7 @@ func (d Duration) Swap(i, j int)	  { d[i], d[j] = d[j], d[i] }
 type QueryTool struct {
 	multiQueue []*Queue
 	queryTimes []time.Duration
+	mu		    sync.Mutex
 }
 
 // Returns an instance of QueryTool.
@@ -41,7 +43,7 @@ func NewQueryTool(concurrency uint) *QueryTool {
 
 	// Create self
 	// Initial capacity of 256 to avoid some append() data copying using the provided query CSV.
-	queryTool := QueryTool{queues, make([]time.Duration, 0, 256)}
+	queryTool := QueryTool{queues, make([]time.Duration, 0, 256), sync.Mutex{}}
 
 	// Start queues
 	queryTool.startMultiQueue()
@@ -49,38 +51,37 @@ func NewQueryTool(concurrency uint) *QueryTool {
 	return &queryTool
 }
 
-// Returns the bucket index this key hashes into for the given number of buckets.
+// Returns the queue this key hashes into.
 func (queryTool *QueryTool) getQueue(key string) *Queue {
 	h := fnv.New32a()
 	h.Write([]byte(key))
 	hash := h.Sum32()
 	bucket := int(hash) % len(queryTool.multiQueue)
-	// fmt.Printf("queue #%d: process host %s\n", bucket, key)
 	return queryTool.multiQueue[bucket]
 }
 
 // Starts all queues in the multiqueue.
 func (queryTool *QueryTool) startMultiQueue() {
+	fmt.Println("Multiqueue starting!")
 	for _,q := range queryTool.multiQueue {
 		go q.Start()
 	}
-	fmt.Println("Multiqueue started!")
 }
 
 // Waits for all multiqueue wait groups to finish.
 func (queryTool *QueryTool) waitAllMultiQueue() {
+	fmt.Println("Multiqueue waiting!")
 	for _,q := range queryTool.multiQueue {
 		q.Wait()
 	}
-	fmt.Println("Multiqueue waiting!")
 }
 
 // Stops all queues in the multiqueue.
 func (queryTool *QueryTool) stopMultiQueue() {
+	fmt.Println("Multiqueue stopping!")
 	for _,q := range queryTool.multiQueue {
 		q.Stop()
 	}
-	fmt.Println("Multiqueue stopping!")
 }
 
 // Reads the CSV file line-by-line, turning each line into a db query that's immediately run.
@@ -98,41 +99,22 @@ func (queryTool *QueryTool) RunWithCsvFile(filePath string) {
 	scanner := bufio.NewScanner(file)
 	scanner.Scan() // Ignore 1st line (it's a header)
 
+	jobNum := 0
 	for scanner.Scan() {
 		line := scanner.Text()
 		parts := strings.Split(line, ",")
 		host, start, end := parts[0], parts[1], parts[2]
 
-		// queryTime := queryTool.runQuery(query, start, end, host)
-		// queryTool.runQuery(query, start, end, host)
 		queue := queryTool.getQueue(host)
-		queue.Enqueue(Job{start, end, host, queryTool.runQuery})
-		// queryTime := time.Duration(1*time.Second)
-
-		// fmt.Println(queryTime)
-		// queryTool.queryTimes = append(queryTool.queryTimes, queryTime)
-
-		// fmt.Printf("\n%s\n", strings.Repeat("=", 30))
+		queue.Enqueue(Job{start, end, host, queryTool.runQuery, jobNum})
+		jobNum += 1
 	}
 
 	// Wait on all multiqueues
 	queryTool.waitAllMultiQueue()
 
-	/*
-	   BUG: This exhibits race-condition-like behavior where sometimes it errors. Even though the previous statement waits for
-	   all queue wait groups to finish, calling stop() here will cause Queue.Start(): job.F(...) to error, saying nil dereference.
-
-	   What I think that means is that the jobs channels are GC'd *BEFORE* some processing is complete, EVEN THOUGH the previous
-	   line was supposed to wait for all that to finish.
-
-	   In this case, none of those resources are used again & the program exists shortly after, so there's no real bad effect of
-	   commenting this out, as far as I understand.
-
-	   I tested running it with the -race flag, but it didn't find anything (& I think that tool may be more for when modifying
-	   shared data & such).
-	*/
 	// Stop all queues in the multiqueue
-	// queryTool.stopMultiQueue()
+	queryTool.stopMultiQueue()
 
 	if err := scanner.Err(); err != nil {
 		fmt.Println("Error scanning file:", err)
@@ -142,25 +124,24 @@ func (queryTool *QueryTool) RunWithCsvFile(filePath string) {
 }
 
 // Runs the given query in the db, prints the results, & returns the runtime of the query operation.
-func (queryTool *QueryTool) runQuery(start, end, host string) time.Duration {
+func (queryTool *QueryTool) runQuery(job Job) time.Duration {
+	// Setup
 	query := readFile("query_cpuMinMaxByMin.sql")
-
 	conn := queryTool.getDatabaseConnection()
 	defer conn.Close()
 
-	// Run the query & time how long it takes
-	queryStart := time.Now()
-	fmt.Printf("%s query start %s\n", host, queryStart)
-
+	// Prepare query
 	stmt, err := conn.Prepare(query)
 	if err != nil {
 		panic(err)
 	}
 	defer stmt.Close()
-	rows, err := stmt.Query(start, end, host)
 
+	// Run the query & time how long it takes
+	queryStart := time.Now()
+	rows, err := stmt.Query(job.start, job.end, job.host)
 	queryEnd := time.Now()
-	fmt.Printf("%s query end   %s\n", host, queryEnd)
+
 	if err != nil {
 		panic(err)
 	}
@@ -183,12 +164,17 @@ func (queryTool *QueryTool) runQuery(start, end, host string) time.Duration {
 
 		// fmt.Println(ts, cpuMin, cpuMax)
 	}
-	// fmt.Printf("%d rows\n", count)
 
 	// Calculate runtime & return it
 	elapsedTime := queryEnd.Sub(queryStart)
-	fmt.Printf("Query for host %s at %s took %s\n", host, start, elapsedTime)
+
+	// Use mutex to lock the shared resource to avoid race conditions
+	// NOTE: It seemed to work 100% of the time without this, but the -race flag was correctly letting me know that
+	// race conditions were happening. The overhead on this seems negligable in my tests. Better safe than sorry!
+	queryTool.mu.Lock()
 	queryTool.queryTimes = append(queryTool.queryTimes, elapsedTime)
+	queryTool.mu.Unlock()
+
 	return elapsedTime
 }
 
@@ -197,9 +183,9 @@ func (queryTool *QueryTool) runQuery(start, end, host string) time.Duration {
 func (queryTool *QueryTool) getDatabaseConnection() *sql.DB {
 	// TODO: Pull from .env file
 	// postgres://tsdbadmin@aqadz0sy32.tzug8uusr7.tsdb.cloud.timescale.com:31633/tsdb?sslmode=require
-	username := "tsdbadmin"
-	password := "oda9b95cubho3tqq"
-	host := "aqadz0sy32.tzug8uusr7.tsdb.cloud.timescale.com:31633"
+	username := "username"
+	password := "password"
+	host := "host"
 	db := "tsdb_transaction"
 	args := "sslmode=require"
 
@@ -237,14 +223,13 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 			maxTime = t
 		}
 		totalTime += t
-		// fmt.Println("wwwwwwwwwwwwwww", t.String())
 	}
 
 	// Compute average
 	avgTime := time.Duration(int64(totalTime) / int64(numQueries))
 
 	// TODO: Remove this
-	fmt.Println(queryTool.queryTimes)
+	fmt.Println("Pre-sorted query times:", queryTool.queryTimes)
 
 	// Sort & compute median
 	var medianTime time.Duration
@@ -254,6 +239,7 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 	} else {
 		medianTime = queryTool.queryTimes[numQueries/2]
 	}
+	fmt.Println("Sorted query times:", queryTool.queryTimes)
 
 	// TODO: Remove this
 	// fmt.Println(queryTool.queryTimes)
