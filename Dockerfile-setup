@@ -11,12 +11,12 @@ ENV DB_DATABASE=tsdb
 ENV DB_OPTIONS=sslmode=require
 
 # Add setup script & exec permission
-ADD setup.sh /app
-RUN chmod +x setup.sh
+ADD dbSetup.sh /app
+RUN chmod +x dbSetup.sh
 
 # Add SQL setup script & data file
 ADD cpu_usage.sql /app
 ADD cpu_usage.csv /app
 
 # Run!
-CMD ["bash", "/app/setup.sh"]
+CMD ["bash", "/app/dbSetup.sh"]

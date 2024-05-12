@@ -2,10 +2,7 @@
 
 set -euo pipefail
 
-connectionStr="postgres://$DB_USER:$DB_PASS@$DB_URL/$DB_DATABASE?$DB_OPTIONS"
+setupName="query_tool_db_setup"
 
-# Setup schema
-psql $connectionStr -f cpu_usage.sql
-
-# Insert data from CSV
-psql $connectionStr -c "\COPY cpu_usage FROM cpu_usage.csv CSV HEADER"
+docker build -f ./Dockerfile-setup -t $setupName .
+docker run -it --rm --name $setupName $setupName

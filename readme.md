@@ -7,10 +7,10 @@ CLI tool used to benchmark `SELECT` query performance against a TimescaleDB inst
 
 - An existing TimescaleDB instance.
 - Local install of Docker to run the database setup container.
-- Make
 - Go
+- Bash (or compatible)
 
-Project was developed on MacOS 13.6.6, Go 1.22.1, Make 3.81, Docker 26.0.0.
+Project was developed on MacOS 13.6.6, Go 1.22.1, Docker 26.0.0, zsh 5.9.
 
 
 ## Setup

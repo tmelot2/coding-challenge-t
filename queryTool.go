@@ -236,7 +236,7 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 	} else {
 		medianTime = queryTool.queryTimes[numQueries/2]
 	}
-	fmt.Println("Sorted query times:", queryTool.queryTimes)
+	// fmt.Println("Sorted query times:", queryTool.queryTimes)
 
 	// Output
 	fmt.Printf("\n%s\n", strings.Repeat("=",30))
