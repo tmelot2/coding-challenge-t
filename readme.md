@@ -49,6 +49,7 @@ This tool supports 2 modes:
 
 [ ] TODO: BUCKETING BY HASH OF HOSTNAME REDUCES PARALLELISM BECAUSE WE ONLY GET AS MANY BUCKETS AS UNIQUE HOSTNAMES
 	- Therefore, host 0 to 9 = 10 hosts, so 10 buckets. Repeat hosts read from the file bucket behind previous requests, so they're stuck waiting.
+	- It's like we actually need "queries per second" or something
 
 [ ] "Total time" doesn't really make sense: Concurrency 10 yields 8 queries that ran for 1.7s, even though they ran at the same time
 	- Therefore, average against the sum doesn't make sense. Should avg be something else?

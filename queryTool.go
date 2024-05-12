@@ -55,7 +55,7 @@ func (queryTool *QueryTool) getQueue(key string) *Queue {
 	h.Write([]byte(key))
 	hash := h.Sum32()
 	bucket := int(hash) % len(queryTool.multiQueue)
-	fmt.Printf("queue #%d: process host %s\n", bucket, key)
+	// fmt.Printf("queue #%d: process host %s\n", bucket, key)
 	return queryTool.multiQueue[bucket]
 }
 
@@ -64,6 +64,7 @@ func (queryTool *QueryTool) startMultiQueue() {
 	for _,q := range queryTool.multiQueue {
 		go q.Start()
 	}
+	fmt.Println("Multiqueue started!")
 }
 
 // Waits for all multiqueue wait groups to finish.
@@ -71,6 +72,7 @@ func (queryTool *QueryTool) waitAllMultiQueue() {
 	for _,q := range queryTool.multiQueue {
 		q.Wait()
 	}
+	fmt.Println("Multiqueue waiting!")
 }
 
 // Stops all queues in the multiqueue.
@@ -78,6 +80,7 @@ func (queryTool *QueryTool) stopMultiQueue() {
 	for _,q := range queryTool.multiQueue {
 		q.Stop()
 	}
+	fmt.Println("Multiqueue stopping!")
 }
 
 // Reads the CSV file line-by-line, turning each line into a db query that's immediately run.
@@ -147,7 +150,7 @@ func (queryTool *QueryTool) runQuery(start, end, host string) time.Duration {
 
 	// Run the query & time how long it takes
 	queryStart := time.Now()
-	fmt.Printf("%s query start %s\n", host, time.Now())
+	fmt.Printf("%s query start %s\n", host, queryStart)
 
 	stmt, err := conn.Prepare(query)
 	if err != nil {
@@ -156,8 +159,8 @@ func (queryTool *QueryTool) runQuery(start, end, host string) time.Duration {
 	defer stmt.Close()
 	rows, err := stmt.Query(start, end, host)
 
-	fmt.Printf("%s query end   %s\n", host, time.Now())
 	queryEnd := time.Now()
+	fmt.Printf("%s query end   %s\n", host, queryEnd)
 	if err != nil {
 		panic(err)
 	}
@@ -202,6 +205,8 @@ func (queryTool *QueryTool) getDatabaseConnection() *sql.DB {
 
 	connectionString := fmt.Sprintf("postgres://%s:%s@%s/%s?%s", username, password, host, db, args)
 	conn, err := sql.Open("postgres", connectionString)
+    conn.SetMaxOpenConns(10)
+    conn.SetMaxIdleConns(10)
 	if err != nil {
 		panic(err)
 	}
@@ -238,6 +243,9 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 	// Compute average
 	avgTime := time.Duration(int64(totalTime) / int64(numQueries))
 
+	// TODO: Remove this
+	fmt.Println(queryTool.queryTimes)
+
 	// Sort & compute median
 	var medianTime time.Duration
 	sort.Sort(Duration(queryTool.queryTimes))
@@ -248,7 +256,7 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 	}
 
 	// TODO: Remove this
-	fmt.Println(queryTool.queryTimes)
+	// fmt.Println(queryTool.queryTimes)
 
 	// Output
 	fmt.Printf("\n%s\n", strings.Repeat("=",30))
