@@ -25,7 +25,7 @@ func (d Duration) Swap(i, j int)	  { d[i], d[j] = d[j], d[i] }
 type QueryTool struct {
 	multiQueue []*Queue
 	queryTimes []time.Duration
-	mu		    sync.Mutex
+	mu		   sync.Mutex	// Used for safe updating of queryTimes
 }
 
 // Returns an instance of QueryTool.

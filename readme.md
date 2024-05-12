@@ -45,7 +45,9 @@ This tool supports 2 modes:
 
 ## Todo & Questions
 
-[ ] Race condition
+[ ] Write design notes, mention having to scale up the instance CPU
+
+[x] Race condition
 
 [ ] TODO: BUCKETING BY HASH OF HOSTNAME REDUCES PARALLELISM BECAUSE WE ONLY GET AS MANY BUCKETS AS UNIQUE HOSTNAMES
 	- Therefore, host 0 to 9 = 10 hosts, so 10 buckets. Repeat hosts read from the file bucket behind previous requests, so they're stuck waiting.
