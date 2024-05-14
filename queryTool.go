@@ -76,7 +76,7 @@ func (queryTool *QueryTool) getQueue(key string) *Queue {
 
 // Starts all queues in the multiqueue.
 func (queryTool *QueryTool) startMultiQueue() {
-	fmt.Println("Multiqueue starting!")
+	// fmt.Println("Multiqueue starting!")
 	for _,q := range queryTool.multiQueue {
 		go q.Start()
 	}
@@ -84,7 +84,7 @@ func (queryTool *QueryTool) startMultiQueue() {
 
 // Waits for all multiqueue wait groups to finish.
 func (queryTool *QueryTool) waitAllMultiQueue() {
-	fmt.Println("Multiqueue waiting!")
+	// fmt.Println("Multiqueue waiting!")
 	for _,q := range queryTool.multiQueue {
 		q.Wait()
 	}
@@ -92,7 +92,7 @@ func (queryTool *QueryTool) waitAllMultiQueue() {
 
 // Stops all queues in the multiqueue.
 func (queryTool *QueryTool) stopMultiQueue() {
-	fmt.Println("Multiqueue stopping!")
+	// fmt.Println("Multiqueue stopping!")
 	for _,q := range queryTool.multiQueue {
 		q.Stop()
 	}
@@ -126,15 +126,55 @@ func (queryTool *QueryTool) RunWithCsvFile(filePath string) {
 		jobNum += 1
 	}
 
-	// Wait on all multiqueues
+	// Wait on all multiqueues, then stop them
 	queryTool.waitAllMultiQueue()
-
-	// Stop all queues in the multiqueue
 	queryTool.stopMultiQueue()
 
 	if err := scanner.Err(); err != nil {
 		fmt.Println("Error scanning file:", err)
 	}
+
+	queryTool.printQueryTimeStats()
+}
+
+// Runs the tool in REPL-like mode where the user manually enters each line.
+// Every line the user submits is translated into a db query, & immediately
+// submitted to the multiqueue for execution.
+func (queryTool *QueryTool) RunWithManualInput(filePath string) {
+	// TODO: Print instructions, example line format, etc
+
+	scanner := bufio.NewScanner(os.Stdin)
+
+	jobNum := 0
+	for {
+		fmt.Print("> ")
+
+		scanned := scanner.Scan()
+		if !scanned {
+			panic(scanner.Err())
+		}
+
+		line := scanner.Text()
+
+		if line == "exit" {
+			break
+		} else if line == "" {
+			continue
+		} else {
+			// TODO: Error handling!
+			parts := strings.Split(line, ",")
+			host, start, end := parts[0], parts[1], parts[2]
+
+			// Add job to multiqueue
+			queue := queryTool.getQueue(host)
+			queue.Enqueue(Job{start, end, host, queryTool.runQuery, jobNum})
+			jobNum += 1
+		}
+	}
+
+	// Wait on all multiqueues, then stop them
+	queryTool.waitAllMultiQueue()
+	queryTool.stopMultiQueue()
 
 	queryTool.printQueryTimeStats()
 }
@@ -233,13 +273,22 @@ func (queryTool *QueryTool) getDatabaseConnection() *sql.DB {
 
 // Prints time stats related to how long the queries took
 func (queryTool *QueryTool) printQueryTimeStats() {
+	// Setup
 	numQueries := len(queryTool.queryTimes)
-	// Prime min & max as 0th element
-	minTime := queryTool.queryTimes[0]
-	maxTime := queryTool.queryTimes[0]
-	var totalTime time.Duration
+	var minTime time.Duration
+	var maxTime time.Duration
+	// Set min & max to 0 if there's no times present
+	if numQueries == 0 {
+		minTime = 0 * time.Second
+		maxTime = 0 * time.Second
+	} else {
+		// Prime min & max as 0th element
+		minTime = queryTool.queryTimes[0]
+		maxTime = queryTool.queryTimes[0]
+	}
 
 	// Compute min, max, total
+	var totalTime time.Duration
 	for _,t := range queryTool.queryTimes {
 		// New min / max
 		if t < minTime {
@@ -252,15 +301,24 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 	}
 
 	// Compute average
-	avgTime := time.Duration(int64(totalTime) / int64(numQueries))
+	var avgTime time.Duration
+	if numQueries == 0 {
+		avgTime = 0 * time.Second
+	} else {
+		avgTime = time.Duration(int64(totalTime) / int64(numQueries))
+	}
 
 	// Sort & compute median
 	var medianTime time.Duration
 	sort.Sort(Duration(queryTool.queryTimes))
-	if numQueries % 2 == 0 {
-		medianTime = (queryTool.queryTimes[numQueries/2-1] + queryTool.queryTimes[numQueries/2]) / 2
+	if numQueries == 0 {
+		medianTime = 0 * time.Second
 	} else {
-		medianTime = queryTool.queryTimes[numQueries/2]
+		if numQueries % 2 == 0 {
+			medianTime = (queryTool.queryTimes[numQueries/2-1] + queryTool.queryTimes[numQueries/2]) / 2
+		} else {
+			medianTime = queryTool.queryTimes[numQueries/2]
+		}
 	}
 
 	// Output

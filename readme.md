@@ -47,7 +47,7 @@ This tool supports 2 modes:
 
 [ ] Writeup: Notes on panic: If part of a larger app, would use error returns instaed of panics where it makes sense
 [ ] Writeup: No unit tests
-[ ] Writeup: Bucketing by hash of hostname reduces parallelism because we only get as many buckets as unique hostnames
+[ ] Writeup: Queue efficiency is low: Bucketing by hash of hostname reduces parallelism because we only get as many buckets as unique hostnames
 	- Therefore, host 0 to 9 = 10 hosts, so 10 buckets. Repeat hosts read from the file bucket behind previous requests, so they're stuck waiting.
 	- A round robin, lru, or "choose empty queue" method would provide increased performance
 		- I tested round robin and got these results with 200 queries:
