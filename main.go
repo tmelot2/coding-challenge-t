@@ -4,6 +4,7 @@ import (
 	"flag"
 )
 
+
 // type DatabaseConfig struct {
 // 	Username string
 // 	Password string

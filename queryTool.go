@@ -26,7 +26,7 @@ func (d Duration) Swap(i, j int)	  { d[i], d[j] = d[j], d[i] }
    QueryTool is used to run benchmarked queries against the TimescaleDB instance.
 
    It uses an async worker multiqueue (with size of input concurrency) to run queries.
-   Jobs are consistently hashed into one of the queues when they are added.
+   Jobs are consistently hashed into one of the queues when they are enqueued.
 */
 type QueryTool struct {
 	multiQueue				[]*Queue
@@ -98,8 +98,9 @@ func (queryTool *QueryTool) stopMultiQueue() {
 	}
 }
 
-// Reads the CSV file line-by-line, turning each line into a db query that's immediately run.
-// Keeps track of runtime as it goes & prints stats when finished.
+// Runs the tool using CSV file as input, prints runtime stats when finished.
+// The file is read line-by-line, each line being translated into a db query,
+// & immediately submitted to the multiqueue for execution.
 func (queryTool *QueryTool) RunWithCsvFile(filePath string) {
 	// Open CSV file
 	file, err := os.Open(filePath)
@@ -119,6 +120,7 @@ func (queryTool *QueryTool) RunWithCsvFile(filePath string) {
 		parts := strings.Split(line, ",")
 		host, start, end := parts[0], parts[1], parts[2]
 
+		// Add job to multiqueue
 		queue := queryTool.getQueue(host)
 		queue.Enqueue(Job{start, end, host, queryTool.runQuery, jobNum})
 		jobNum += 1
@@ -271,7 +273,7 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 	fmt.Printf("   Avg time: %6.3fs\n", float64(avgTime)    / float64(time.Second))
 	fmt.Printf("Median time: %6.3fs\n", float64(medianTime) / float64(time.Second))
 	fmt.Println("")
-	fmt.Println("Note: This is *not* the run time of the tool, this is total query time!")
+	fmt.Println("Note: That is *not* tool run time, it's total query time! If queries ran in parallel,\nthe value may be larger than expected.")
 	fmt.Println("")
 }
 

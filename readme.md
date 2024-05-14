@@ -45,12 +45,9 @@ This tool supports 2 modes:
 
 ## Todo & Questions
 
-[ ] Write design notes, mention having to scale up the instance CPU
-	- Would like to decouple the query a bit more, so other queries with different params can easily be swapped in.
-
-[x] Race condition
-
-[ ] TODO: BUCKETING BY HASH OF HOSTNAME REDUCES PARALLELISM BECAUSE WE ONLY GET AS MANY BUCKETS AS UNIQUE HOSTNAMES
+[ ] Writeup: Notes on panic: If part of a larger app, would use error returns instaed of panics where it makes sense
+[ ] Writeup: No unit tests
+[ ] Writeup: Bucketing by hash of hostname reduces parallelism because we only get as many buckets as unique hostnames
 	- Therefore, host 0 to 9 = 10 hosts, so 10 buckets. Repeat hosts read from the file bucket behind previous requests, so they're stuck waiting.
 	- A round robin, lru, or "choose empty queue" method would provide increased performance
 		- I tested round robin and got these results with 200 queries:
@@ -62,20 +59,20 @@ This tool supports 2 modes:
 		- Compared against bucketing, which maxes at 10
 			- Concurrency   5: 15s, avg 0.07s
 			- Concurrency  10: 11s, avg 0.07s
+[ ] Writeup: design notes
+	- mention having to scale up TimescaleDB instance CPU
+	- Would like to decouple from query a bit more, so other queries with different params can easily be swapped in
+		- is a bit hardcoded around that particular query
+[ ] Writeup: Query time range is [inclusive, exclusive]
 
+[x] Race condition
 [/] "Total time" doesn't really make sense: Concurrency 10 yields 8 queries that ran for 1.7s, even though they ran at the same time
 	- Therefore, average against the sum doesn't make sense. Should avg be something else?
-
 [x] Create `homework` db. Getting error on create:
 	```
 	ERROR:  tsdb_admin: database homework is not an allowed database name
 	HINT:  Contact your administrator to configure the "tsdb_admin.allowed_databases"
 	```
-
 [x] Are ranges inclusive or exclusive on either end?
-	[ ] DOC THIS ANSWER IN HERE! It's important to know that when using the tool.
-
 [x] Is it correct that we don't output query results, just benchmark results?
-
 [x] Ok to require Docker on client that is used as part of project setup? (To avoid installing Postgres locally)
-

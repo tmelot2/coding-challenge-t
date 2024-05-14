@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+
 // Job holds necessary data to run a db query, including a ref to the query function.
 type Job struct {
 	start  string
@@ -62,10 +63,10 @@ func (q *Queue) Stop() {
 	   Stop() only runs after Wait() has been called, ensuring that all jobs are finished. This
 	   implies no new jobs are coming in. However that line runs with nil jobs, hence the error.
 
-	   I think it makes sense to send the stop close signal 1st so the Start() goroutine returns & ends.
+	   I think it makes sense to send the stop close signal first, so the Start() goroutine returns & ends.
 	   This way, additional jobs that come in will be ignored, because nothing is watching the
-	   channel anymore. Where I'm still a little confused is there shouldn't *be* additional jobs,
-	   because we already waited on all the work to finish.
+	   channel anymore. Where I'm confused is there shouldn't *be* additional jobs, because at that
+	   point we already waited on all the jobs to finish.
 	*/
 	close(q.stop)
 	close(q.jobs)
