@@ -29,13 +29,14 @@ func (d Duration) Swap(i, j int)	  { d[i], d[j] = d[j], d[i] }
    Jobs are consistently hashed into one of the queues when they are added.
 */
 type QueryTool struct {
-	multiQueue []*Queue
-	queryTimes []time.Duration
-	mu		   sync.Mutex	// Used for safe updating of queryTimes
+	multiQueue				[]*Queue
+	queryTimes				[]time.Duration
+	mu		   				sync.Mutex	// Used for safe updating of queryTimes
+	outputQueryResults	bool
 }
 
 // Returns an instance of QueryTool.
-func NewQueryTool(concurrency uint) *QueryTool {
+func NewQueryTool(concurrency uint, outputQueryResults bool) *QueryTool {
 	if concurrency <= 0 {
 		fmt.Printf("Concurrency <= 0 (is %d), setting to 1\n", concurrency)
 		concurrency = 1
@@ -49,7 +50,12 @@ func NewQueryTool(concurrency uint) *QueryTool {
 
 	// Create QueryTool instance
 	// Initial capacity of 256 to avoid some append() data copying using the provided query CSV.
-	queryTool := QueryTool{queues, make([]time.Duration, 0, 256), sync.Mutex{}}
+	queryTool := QueryTool{
+		multiQueue: queues,
+		queryTimes: make([]time.Duration, 0, 256),
+		mu: sync.Mutex{},
+		outputQueryResults: outputQueryResults,
+	}
 
 	// Start queues
 	queryTool.startMultiQueue()
@@ -148,15 +154,37 @@ func (queryTool *QueryTool) runQuery(job Job) time.Duration {
 	// Run the query & time how long it takes
 	queryStart := time.Now()
 	rows, err := stmt.Query(job.start, job.end, job.host)
+	defer rows.Close()
 	queryEnd := time.Now()
 
 	if err != nil {
 		panic(err)
 	}
-	defer rows.Close()
 
-	// Print results
+	// Optionally print query results
+	if queryTool.outputQueryResults {
+		queryTool.printQueryResults(rows)
+	}
+
+	// Calculate runtime & return it
+	elapsedTime := queryEnd.Sub(queryStart)
+
+	// Use mutex to lock the shared resource to avoid race conditions
+	// NOTE: It seemed to work 100% of the time without this, but the -race flag was correctly letting me know that
+	// race conditions were happening. The overhead on this seems negligable in my tests. Better safe than sorry. Don't
+	// make anybody have to debug race conditions!
+	queryTool.mu.Lock()
+	queryTool.queryTimes = append(queryTool.queryTimes, elapsedTime)
+	queryTool.mu.Unlock()
+
+	return elapsedTime
+}
+
+// Loops over query result rows & prints each one.
+// NOTE: Does NOT close rows! The caller is responsible for that.
+func (queryTool *QueryTool) printQueryResults(rows *sql.Rows) {
 	count := 0
+
 	for rows.Next() {
 		var host string
 		var ts time.Time
@@ -168,22 +196,10 @@ func (queryTool *QueryTool) runQuery(job Job) time.Duration {
 			panic(err)
 		}
 
+		fmt.Println(host, ts, cpuMin, cpuMax)
 		count += 1
-
-		// fmt.Println(ts, cpuMin, cpuMax)
 	}
-
-	// Calculate runtime & return it
-	elapsedTime := queryEnd.Sub(queryStart)
-
-	// Use mutex to lock the shared resource to avoid race conditions
-	// NOTE: It seemed to work 100% of the time without this, but the -race flag was correctly letting me know that
-	// race conditions were happening. The overhead on this seems negligable in my tests. Better safe than sorry!
-	queryTool.mu.Lock()
-	queryTool.queryTimes = append(queryTool.queryTimes, elapsedTime)
-	queryTool.mu.Unlock()
-
-	return elapsedTime
+	fmt.Println("")
 }
 
 // Connects to the db & returns the connection
@@ -244,7 +260,6 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 	} else {
 		medianTime = queryTool.queryTimes[numQueries/2]
 	}
-	// fmt.Println("Sorted query times:", queryTool.queryTimes)
 
 	// Output
 	fmt.Printf("\n%s\n", strings.Repeat("=",30))
@@ -255,6 +270,8 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 	fmt.Printf("   Max time: %6.3fs\n", float64(maxTime)    / float64(time.Second))
 	fmt.Printf("   Avg time: %6.3fs\n", float64(avgTime)    / float64(time.Second))
 	fmt.Printf("Median time: %6.3fs\n", float64(medianTime) / float64(time.Second))
+	fmt.Println("")
+	fmt.Println("Note: This is *not* the run time of the tool, this is total query time!")
 	fmt.Println("")
 }
 
