@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"hash/fnv"
+	"io/ioutil"
 	"os"
 	"sort"
 	"strings"
@@ -133,7 +134,7 @@ func (queryTool *QueryTool) RunWithCsvFile(filePath string) {
 // Runs the given query in the db, prints the results, & returns the runtime of the query operation.
 func (queryTool *QueryTool) runQuery(job Job) time.Duration {
 	// Setup
-	query := readFile("query_cpuMinMaxByMin.sql")
+	query := readFile("./sql/query_cpuMinMaxByMin.sql")
 	conn := queryTool.getDatabaseConnection()
 	defer conn.Close()
 
@@ -255,4 +256,14 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 	fmt.Printf("   Avg time: %6.3fs\n", float64(avgTime)    / float64(time.Second))
 	fmt.Printf("Median time: %6.3fs\n", float64(medianTime) / float64(time.Second))
 	fmt.Println("")
+}
+
+// Returns file contents as a string
+func readFile(filePath string) string {
+	query, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		panic(err)
+	}
+	queryStr := string(query)
+	return queryStr
 }

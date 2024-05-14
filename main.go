@@ -1,10 +1,8 @@
 package main
 
-// TODO: Rename this file
-
 import (
-	// "fmt"
-	"io/ioutil"
+	"flag"
+	"fmt"
 )
 
 // type DatabaseConfig struct {
@@ -15,23 +13,30 @@ import (
 // 	Args 	 string
 // }
 
-// Returns file contents as a string
-func readFile(filePath string) string {
-	query, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		panic(err)
+type InputArgs struct {
+	concurrency 	uint
+	csvQueryFile	string // File path
+	outputQueryResults	bool
+}
+
+func getInputArgs() *InputArgs {
+	concurrencyArg := flag.Uint("concurrency", 1, "Number of queries that can run in parallel")
+	csvQueryFileArg := flag.String("csvQueryFile", "./data/query_params.csv", "Path to query CSV file")
+	outputQueryResultsArg := flag.String("outputQueryResults", false, "Flag indicating if query results should be output. NOTE: This can result in large output!")
+
+	flag.Parse()
+
+	return &InputArgs{
+		concurrency: *concurrencyArg,
+		csvQueryFile: *csvQueryFileArg,
 	}
-	queryStr := string(query)
-	return queryStr
 }
 
 func main() {
-	csvFilePath := "query_params_tiny.csv"
+	inputArgs := getInputArgs()
 
-	queryTool := NewQueryTool(10)
-	queryTool.RunWithCsvFile(csvFilePath)
+	queryTool := NewQueryTool(inputArgs.concurrency)
+	queryTool.RunWithCsvFile(inputArgs.csvQueryFile)
 }
 
 // TODO: Load env vars from .env
-// TODO: Read concurrency from args
-// TODO: Read input file from args, but default to query_params.csv

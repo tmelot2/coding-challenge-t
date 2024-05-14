@@ -46,6 +46,7 @@ This tool supports 2 modes:
 ## Todo & Questions
 
 [ ] Write design notes, mention having to scale up the instance CPU
+	- Would like to decouple the query a bit more, so other queries with different params can easily be swapped in.
 
 [x] Race condition
 
@@ -62,18 +63,19 @@ This tool supports 2 modes:
 			- Concurrency   5: 15s, avg 0.07s
 			- Concurrency  10: 11s, avg 0.07s
 
-[ ] "Total time" doesn't really make sense: Concurrency 10 yields 8 queries that ran for 1.7s, even though they ran at the same time
+[/] "Total time" doesn't really make sense: Concurrency 10 yields 8 queries that ran for 1.7s, even though they ran at the same time
 	- Therefore, average against the sum doesn't make sense. Should avg be something else?
 
-[ ] Create `homework` db. Getting error on create:
+[x] Create `homework` db. Getting error on create:
 	```
 	ERROR:  tsdb_admin: database homework is not an allowed database name
 	HINT:  Contact your administrator to configure the "tsdb_admin.allowed_databases"
 	```
 
-[ ] Are ranges inclusive or exclusive on either end?
-	- DOC THIS ANSWER IN HERE! It's important to know that when using the tool.
+[x] Are ranges inclusive or exclusive on either end?
+	[ ] DOC THIS ANSWER IN HERE! It's important to know that when using the tool.
 
-[ ] Is it correct that we don't output query results, just benchmark results?
+[x] Is it correct that we don't output query results, just benchmark results?
 
-[ ] Ok to require Docker on client that is used as part of project setup? (To avoid installing Postgres locally)
+[x] Ok to require Docker on client that is used as part of project setup? (To avoid installing Postgres locally)
+
