@@ -2,6 +2,8 @@
 
 # Builds & runs a Docker container that uses a Postgres client to setup schema + data
 # on Postgres server.
+#
+# Usage: $ bash setup.sh
 
 set -euo pipefail
 
