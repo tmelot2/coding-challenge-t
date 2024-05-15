@@ -44,12 +44,15 @@ func getInputArgs() *InputArgs {
 // ///////////////////
 // Main!
 func main() {
+	// Setup
 	db := NewDatabase("./.env")
 	inputArgs := getInputArgs()
 
+	// Create the tool
 	queryTool := NewQueryTool(db, inputArgs.concurrency, inputArgs.outputQueryResults)
-	mode := Mode(inputArgs.mode)
 
+	// Run tool in the mode specified
+	mode := Mode(inputArgs.mode)
 	if mode == MODE_FILE {
 		queryTool.RunWithCsvFile(inputArgs.csvQueryFile)
 	} else if mode == MODE_INTERACTIVE {

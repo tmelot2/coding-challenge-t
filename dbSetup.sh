@@ -1,6 +1,8 @@
 #!/bin/bash
 
 # Sets up schema + data on Postgres server.
+# NOTE: This is intended to be run from inside the container run by setup.sh.
+# 		Use that to setup the db!
 
 set -euo pipefail
 

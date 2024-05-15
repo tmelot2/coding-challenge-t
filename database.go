@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// Configs used to connect to the database
+// Configs used to connect to the database.
 type DatabaseConfig struct {
 	username string
 	password string
@@ -17,7 +17,8 @@ type DatabaseConfig struct {
 	options  string
 }
 
-// Reads & returns database config from the .env file
+// Reads & returns database config from the .env file. File format is:
+// var=val
 func getDatabaseConfig(envFilePath string) *DatabaseConfig {
 	// Open the file
 	file, err := os.Open(envFilePath)
@@ -27,11 +28,11 @@ func getDatabaseConfig(envFilePath string) *DatabaseConfig {
 	defer file.Close()
 
 	// Setup
-	var username string
-	var password string
-	var url string
-	var dbName string
-	var options string
+	var username,
+		password,
+		url,
+		dbName,
+		options string
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -73,18 +74,18 @@ func getDatabaseConfig(envFilePath string) *DatabaseConfig {
 	}
 }
 
-// Database is used to get connections to the db
+// Database is used to get connections to the db.
 type Database struct {
 	config	*DatabaseConfig
 }
 
-// Returns a new Database instance with the config loaded from the given file path
+// Returns a new Database instance with the config loaded from the given file path.
 func NewDatabase(envFilePath string) *Database {
 	dbConfig := getDatabaseConfig(envFilePath)
 	return &Database{dbConfig}
 }
 
-// Returns a database connection
+// Returns a database connection.
 func (db *Database) GetConnection() *sql.DB {
 	connectionString := fmt.Sprintf(
 		"postgres://%s:%s@%s/%s?%s",

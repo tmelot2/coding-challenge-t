@@ -1,7 +1,5 @@
 -- Sets up db schema for CPU usage tracking data.
 
-DROP TABLE IF EXISTS cpu_usage;
-
 -- Setup TimescaleDB extension
 CREATE EXTENSION IF NOT EXISTS timescaledb;
 

@@ -12,7 +12,6 @@ import (
 	"sync"
 	"time"
 )
-
 import _ "github.com/lib/pq"
 
 
@@ -50,7 +49,7 @@ func NewQueryTool(db *Database, concurrency uint, outputQueryResults bool) *Quer
 	}
 
 	// Create QueryTool instance
-	// Initial capacity of 256 to avoid some append() data copying using the provided query CSV.
+	// Initial capacity of 256 to avoid some append() array copying using the provided query CSV.
 	queryTool := QueryTool{
 		db: db,
 		multiQueue: queues,
@@ -144,7 +143,10 @@ func (queryTool *QueryTool) RunWithCsvFile(filePath string) {
 // Every line the user submits is translated into a db query, & immediately
 // submitted to the multiqueue for execution.
 func (queryTool *QueryTool) RunWithManualInput(filePath string) {
-	// TODO: Print instructions, example line format, etc
+	// Print instructions & example line format.
+	fmt.Println("You're running in interactive mode. Enter lines in the format:")
+	fmt.Println("host_000000,2017-01-01 00:00:00,2017-01-01 01:00:00")
+	fmt.Println(`Type "exit" to exit`)
 
 	scanner := bufio.NewScanner(os.Stdin)
 
