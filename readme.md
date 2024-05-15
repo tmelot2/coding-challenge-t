@@ -76,7 +76,7 @@ hostname,start_time,end_time
 host_000008,2017-01-01 08:59:22,2017-01-01 09:59:22
 ```
 
-The query includes start time & excludes end time.
+Date is `yyyy-mm-dd` (I am pretty sure, I should have asked). The query includes start time & excludes end time.
 
 
 ## Design Notes
