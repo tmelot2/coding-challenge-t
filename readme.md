@@ -31,7 +31,7 @@ This tool uses Docker to run a Postgres client that connects to the db & sets up
 
 	> NOTE: Do not commit credentials to the repo!
 
-	> NOTE: Also, storing credentials in a plaintext file is **not** something I would do in production code. Ideally I would encrypt & store this data in a secrets manager, use more appropriate priviledges or a service account, & other security best practices.
+	> NOTE: Storing credentials in a plaintext file is **not** something I would do in production code. Ideally, I would encrypt & store it in a secrets manager, use more appropriate priviledges or a service account, & other security best practices.
 
 3) Run `$ bash setup.sh`
 
@@ -83,7 +83,7 @@ Date is `yyyy-mm-dd` (I am pretty sure, I should have asked). The query includes
 
 ### Concurrency Limitations
 
-The requirement for workers to consistently execute queries for the same hostname imposes an upper limit on queue efficiency for 2 reasons:
+The requirement for workers to always execute queries for the same hostname imposes an upper limit on queue efficiency for 2 reasons:
 
 1) When a host is queried twice, the 2nd query must wait on the 1st to finish, even if other queues are empty.
 2) The # of queues actually used is limited to the # of unique hostnames.
@@ -119,9 +119,9 @@ If I were writing a library or parts of a larger system, I would refactor much o
 
 ### Tests
 
-Normally, I would never write any code without tests. But in this case, the project was a fairly large workload & I am short on programming time, so there are no tests 😕. This is Very Bad Practice, and I realize the irony of writing this for a job application 😄.
+Normally I would never write code without tests. In this case, the project was large & my time is small, so there are no tests 😕. This is Very Bad Practice, and I realize the irony of writing this 😅.
 
-If time were no object, I would have begun to add unit tests during refactoring after commit `ee46b1c`, which is when I had working spaghetti code for serial queries. In the past, I've been a fan of getting external data using mocks via dependency injection. I would also add integration tests to test output of the whole system, database included.
+If this was a for-real project, I would have added unit tests after commit `ee46b1c` when the poc was working. I'd look at dependency injection to mock external data sources or services. I'd also add integration tests to test all of the system.
 
 Here's examples of unit tests I wrote for a still-in-development Go JSON parser:
 - [lexer_test.go](https://github.com/tmelot2/go-json-parser/blob/dev/lexer_test.go)
