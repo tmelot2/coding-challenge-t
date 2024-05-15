@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"database/sql"
+	"errors"
 	"fmt"
 	"hash/fnv"
 	"io/ioutil"
@@ -14,6 +15,9 @@ import (
 )
 import _ "github.com/lib/pq"
 
+const LINE_FORMAT_EXAMPLE string = "" +
+	"Format:  host,startTimestamp,endTimestamp\n" +
+	"Example: host_000000,2017-01-01 00:00:00,2017-01-01 01:00:00"
 
 // Duration is sortable because it adheres to sort interface
 type Duration []time.Duration
@@ -118,8 +122,11 @@ func (queryTool *QueryTool) RunWithCsvFile(filePath string) {
 	jobNum := 0
 	for scanner.Scan() {
 		line := scanner.Text()
-		// TODO: Update this to getLine() which will do error handling
-		parts := strings.Split(line, ",")
+		parts, err := queryTool.parseLine(line)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
 		host, start, end := parts[0], parts[1], parts[2]
 
 		// Add job to multiqueue
@@ -145,7 +152,7 @@ func (queryTool *QueryTool) RunWithCsvFile(filePath string) {
 func (queryTool *QueryTool) RunWithManualInput(filePath string) {
 	// Print instructions & example line format.
 	fmt.Println("You're running in interactive mode. Enter lines in the format:")
-	fmt.Println("host_000000,2017-01-01 00:00:00,2017-01-01 01:00:00")
+	fmt.Println(LINE_FORMAT_EXAMPLE)
 	fmt.Println(`Type "exit" to exit`)
 
 	scanner := bufio.NewScanner(os.Stdin)
@@ -166,9 +173,11 @@ func (queryTool *QueryTool) RunWithManualInput(filePath string) {
 		} else if line == "" {
 			continue
 		} else {
-			// TODO: Error handling!
-			// TODO: Update this to getLine() which will do error handling
-			parts := strings.Split(line, ",")
+			parts, err := queryTool.parseLine(line)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
 			host, start, end := parts[0], parts[1], parts[2]
 
 			// Add job to multiqueue
@@ -183,6 +192,37 @@ func (queryTool *QueryTool) RunWithManualInput(filePath string) {
 	queryTool.stopMultiQueue()
 
 	queryTool.printQueryTimeStats()
+}
+
+// Parses & returns the line, prints helpful error if invalid
+func (queryTool *QueryTool) parseLine(line string) ([]string, error) {
+	parts := strings.Split(line, ",")
+
+	// Validate length
+	if len(parts) != 3 {
+		msg := fmt.Sprintf("Invalid line: %s", line)
+		return []string{}, errors.New(msg)
+	}
+
+	// Validate timestamp fields
+	start, end := parts[1], parts[2]
+	if !queryTool.isValidTimestamp(start) {
+		msg := fmt.Sprintf("Invalid timestamp: %s", start)
+		return []string{}, errors.New(msg)
+	}
+	if !queryTool.isValidTimestamp(end) {
+		msg := fmt.Sprintf("Invalid timestamp: %s", end)
+		return []string{}, errors.New(msg)
+	}
+
+	return parts, nil
+}
+
+// Validates timestamp is of format yyyy-mm-dd
+func (queryTool *QueryTool) isValidTimestamp(ts string) bool {
+	format := "2006-01-02 15:04:05"
+	_, err := time.Parse(format, ts)
+	return err == nil
 }
 
 // Runs the given query in the db, prints the results, & returns the runtime of the query operation.
