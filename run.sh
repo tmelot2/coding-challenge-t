@@ -18,4 +18,4 @@
 
 set -eo pipefail
 
-go run main.go queryTool.go queue.go "$@"
+go run main.go queryTool.go queue.go database.go "$@"

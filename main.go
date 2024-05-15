@@ -1,35 +1,30 @@
 package main
 
 import (
-	"fmt"
 	"flag"
+	"fmt"
 )
-
-
-// type DatabaseConfig struct {
-// 	Username string
-// 	Password string
-// 	Host 	 string
-// 	DbName	 string
-// 	Args 	 string
-// }
 
 // App modes:
-//  "file" (default): Reads from input file arg
-//  "interactive": Reads from user input, REPL-style
+//
+//	"file" (default): Reads from input file arg
+//	"interactive": Reads from user input, REPL-style
 type Mode string
+
 const (
-	MODE_FILE			Mode = "file"
-	MODE_INTERACTIVE 	Mode = "interactive"
+	MODE_FILE        Mode = "file"
+	MODE_INTERACTIVE Mode = "interactive"
 )
 
+// All app input arguments
 type InputArgs struct {
-	mode			Mode
-	concurrency 	uint
-	csvQueryFile	string // File path
-	outputQueryResults	bool
+	mode               Mode
+	concurrency        uint
+	csvQueryFile       string // File path
+	outputQueryResults bool
 }
 
+// Returns app input args or defaults
 func getInputArgs() *InputArgs {
 	modeArg := flag.String("mode", "file", "App mode (file or interactive)")
 	concurrencyArg := flag.Uint("concurrency", 1, "Number of queries that can run in parallel")
@@ -39,17 +34,20 @@ func getInputArgs() *InputArgs {
 	flag.Parse()
 
 	return &InputArgs{
-		mode: Mode(*modeArg),
-		concurrency: *concurrencyArg,
-		csvQueryFile: *csvQueryFileArg,
+		mode:               Mode(*modeArg),
+		concurrency:        *concurrencyArg,
+		csvQueryFile:       *csvQueryFileArg,
 		outputQueryResults: *outputQueryResultsArg,
 	}
 }
 
+// ///////////////////
+// Main!
 func main() {
+	db := NewDatabase("./.env")
 	inputArgs := getInputArgs()
 
-	queryTool := NewQueryTool(inputArgs.concurrency, inputArgs.outputQueryResults)
+	queryTool := NewQueryTool(db, inputArgs.concurrency, inputArgs.outputQueryResults)
 	mode := Mode(inputArgs.mode)
 
 	if mode == MODE_FILE {
@@ -60,5 +58,3 @@ func main() {
 		panic(fmt.Sprintf("Unknown mode %s", mode))
 	}
 }
-
-// TODO: Load env vars from .env

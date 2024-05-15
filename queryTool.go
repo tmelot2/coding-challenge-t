@@ -29,6 +29,7 @@ func (d Duration) Swap(i, j int)	  { d[i], d[j] = d[j], d[i] }
    Jobs are consistently hashed into one of the queues when they are enqueued.
 */
 type QueryTool struct {
+	db							*Database
 	multiQueue				[]*Queue
 	queryTimes				[]time.Duration
 	mu		   				sync.Mutex	// Used for safe updating of queryTimes
@@ -36,7 +37,7 @@ type QueryTool struct {
 }
 
 // Returns an instance of QueryTool.
-func NewQueryTool(concurrency uint, outputQueryResults bool) *QueryTool {
+func NewQueryTool(db *Database, concurrency uint, outputQueryResults bool) *QueryTool {
 	if concurrency <= 0 {
 		fmt.Printf("Concurrency <= 0 (is %d), setting to 1\n", concurrency)
 		concurrency = 1
@@ -51,6 +52,7 @@ func NewQueryTool(concurrency uint, outputQueryResults bool) *QueryTool {
 	// Create QueryTool instance
 	// Initial capacity of 256 to avoid some append() data copying using the provided query CSV.
 	queryTool := QueryTool{
+		db: db,
 		multiQueue: queues,
 		queryTimes: make([]time.Duration, 0, 256),
 		mu: sync.Mutex{},
@@ -117,6 +119,7 @@ func (queryTool *QueryTool) RunWithCsvFile(filePath string) {
 	jobNum := 0
 	for scanner.Scan() {
 		line := scanner.Text()
+		// TODO: Update this to getLine() which will do error handling
 		parts := strings.Split(line, ",")
 		host, start, end := parts[0], parts[1], parts[2]
 
@@ -162,6 +165,7 @@ func (queryTool *QueryTool) RunWithManualInput(filePath string) {
 			continue
 		} else {
 			// TODO: Error handling!
+			// TODO: Update this to getLine() which will do error handling
 			parts := strings.Split(line, ",")
 			host, start, end := parts[0], parts[1], parts[2]
 
@@ -183,7 +187,7 @@ func (queryTool *QueryTool) RunWithManualInput(filePath string) {
 func (queryTool *QueryTool) runQuery(job Job) time.Duration {
 	// Setup
 	query := readFile("./sql/query_cpuMinMaxByMin.sql")
-	conn := queryTool.getDatabaseConnection()
+	conn := queryTool.db.GetConnection()
 	defer conn.Close()
 
 	// Prepare query
@@ -242,33 +246,6 @@ func (queryTool *QueryTool) printQueryResults(rows *sql.Rows) {
 		count += 1
 	}
 	fmt.Println("")
-}
-
-// Connects to the db & returns the connection
-// TODO: Refactor to ConnectionManager or something, & pass in a ref of that to QueryTool constructor
-func (queryTool *QueryTool) getDatabaseConnection() *sql.DB {
-	// TODO: Pull from .env file
-	// postgres://tsdbadmin@aqadz0sy32.tzug8uusr7.tsdb.cloud.timescale.com:31633/tsdb?sslmode=require
-	username := "username"
-	password := "password"
-	host := "host"
-	db := "tsdb_transaction"
-	args := "sslmode=require"
-
-	connectionString := fmt.Sprintf("postgres://%s:%s@%s/%s?%s", username, password, host, db, args)
-	conn, err := sql.Open("postgres", connectionString)
-    conn.SetMaxOpenConns(10)
-    conn.SetMaxIdleConns(10)
-	if err != nil {
-		panic(err)
-	}
-
-	err = conn.Ping()
-	if err != nil {
-		panic(err)
-	}
-
-	return conn
 }
 
 // Prints time stats related to how long the queries took

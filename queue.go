@@ -12,7 +12,8 @@ type Job struct {
 	start  string
 	end    string
 	host   string
-	f func(job Job) time.Duration // Function that performs the actual work of the job
+	// Function that performs the actual work of the job
+	f func(job Job) time.Duration
 	jobNum int
 }
 
