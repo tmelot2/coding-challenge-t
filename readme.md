@@ -103,7 +103,7 @@ Efficiency could be improved by using a different bucketing method like round-ro
 	- Concurrency 100: 7.7s, avg 1.10s
 	- Concurrency 200: 7.7s, avg 2.3s
 
-Notice that with 10 or 100 queues, hostname bucketing is the same, & round-robin is much faster, even at 10. It's also apparent that as concurrency scales up, we hit a limit on server-side load due to CPU, memory, IO, network, etc. More stuff is running at once, but the average time creeps, so the total time doesn't really change.
+Notice that with 10 or 100 queues, hostname bucketing is the same, & round-robin is much faster, even at 10. It's also apparent that as concurrency scales up, we hit a limit on server-side load due to CPU, memory, IO, network, etc. More stuff is running at once, but the average time goes up, so the total time doesn't really change.
 
 ### Queue Decoupling
 
