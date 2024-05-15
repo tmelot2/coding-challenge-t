@@ -21,22 +21,23 @@ const LINE_FORMAT_EXAMPLE string = "" +
 
 // Duration is sortable because it adheres to sort interface
 type Duration []time.Duration
-func (d Duration) Len() int       	  { return len(d) }
+
+func (d Duration) Len() int           { return len(d) }
 func (d Duration) Less(i, j int) bool { return d[i] < d[j] }
-func (d Duration) Swap(i, j int)	  { d[i], d[j] = d[j], d[i] }
+func (d Duration) Swap(i, j int)      { d[i], d[j] = d[j], d[i] }
 
 /*
-   QueryTool is used to run benchmarked queries against the TimescaleDB instance.
+QueryTool is used to run benchmarked queries against the TimescaleDB instance.
 
-   It uses an async worker multiqueue (with size of input concurrency) to run queries.
-   Jobs are consistently hashed into one of the queues when they are enqueued.
+It uses an async worker multiqueue (with size of input concurrency) to run queries.
+Jobs are consistently hashed into one of the queues when they are enqueued.
 */
 type QueryTool struct {
-	db							*Database
-	multiQueue				[]*Queue
-	queryTimes				[]time.Duration
-	mu		   				sync.Mutex	// Used for safe updating of queryTimes
-	outputQueryResults	bool
+	db                 *Database
+	multiQueue         []*Queue
+	queryTimes         []time.Duration
+	mu                 sync.Mutex // Used for safe updating of queryTimes
+	outputQueryResults bool
 }
 
 // Returns an instance of QueryTool.
@@ -55,10 +56,10 @@ func NewQueryTool(db *Database, concurrency uint, outputQueryResults bool) *Quer
 	// Create QueryTool instance
 	// Initial capacity of 256 to avoid some append() array copying using the provided query CSV.
 	queryTool := QueryTool{
-		db: db,
-		multiQueue: queues,
-		queryTimes: make([]time.Duration, 0, 256),
-		mu: sync.Mutex{},
+		db:                 db,
+		multiQueue:         queues,
+		queryTimes:         make([]time.Duration, 0, 256),
+		mu:                 sync.Mutex{},
 		outputQueryResults: outputQueryResults,
 	}
 
@@ -82,7 +83,7 @@ func (queryTool *QueryTool) getQueue(key string) *Queue {
 // Starts all queues in the multiqueue.
 func (queryTool *QueryTool) startMultiQueue() {
 	// fmt.Println("Multiqueue starting!")
-	for _,q := range queryTool.multiQueue {
+	for _, q := range queryTool.multiQueue {
 		go q.Start()
 	}
 }
@@ -90,7 +91,7 @@ func (queryTool *QueryTool) startMultiQueue() {
 // Waits for all multiqueue wait groups to finish.
 func (queryTool *QueryTool) waitAllMultiQueue() {
 	// fmt.Println("Multiqueue waiting!")
-	for _,q := range queryTool.multiQueue {
+	for _, q := range queryTool.multiQueue {
 		q.Wait()
 	}
 }
@@ -98,7 +99,7 @@ func (queryTool *QueryTool) waitAllMultiQueue() {
 // Stops all queues in the multiqueue.
 func (queryTool *QueryTool) stopMultiQueue() {
 	// fmt.Println("Multiqueue stopping!")
-	for _,q := range queryTool.multiQueue {
+	for _, q := range queryTool.multiQueue {
 		q.Stop()
 	}
 }
@@ -308,7 +309,7 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 
 	// Compute min, max, total
 	var totalTime time.Duration
-	for _,t := range queryTool.queryTimes {
+	for _, t := range queryTool.queryTimes {
 		// New min / max
 		if t < minTime {
 			minTime = t
@@ -333,7 +334,7 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 	if numQueries == 0 {
 		medianTime = 0 * time.Second
 	} else {
-		if numQueries % 2 == 0 {
+		if numQueries%2 == 0 {
 			medianTime = (queryTool.queryTimes[numQueries/2-1] + queryTool.queryTimes[numQueries/2]) / 2
 		} else {
 			medianTime = queryTool.queryTimes[numQueries/2]
@@ -341,7 +342,7 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 	}
 
 	// Output
-	fmt.Printf("\n%s\n", strings.Repeat("=",30))
+	fmt.Printf("\n%s\n", strings.Repeat("=", 30))
 	fmt.Printf("Concurrency:  %d\n", len(queryTool.multiQueue))
 	fmt.Printf("Queries run:  %d\n", numQueries)
 	fmt.Printf(" Total time: %6.3fs\n", float64(totalTime)  / float64(time.Second))

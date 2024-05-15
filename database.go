@@ -76,7 +76,7 @@ func getDatabaseConfig(envFilePath string) *DatabaseConfig {
 
 // Database is used to get connections to the db.
 type Database struct {
-	config	*DatabaseConfig
+	config *DatabaseConfig
 }
 
 // Returns a new Database instance with the config loaded from the given file path.
@@ -96,8 +96,8 @@ func (db *Database) GetConnection() *sql.DB {
 		db.config.options,
 	)
 	conn, err := sql.Open("postgres", connectionString)
-    conn.SetMaxOpenConns(10)
-    conn.SetMaxIdleConns(10)
+	conn.SetMaxOpenConns(10)
+	conn.SetMaxIdleConns(10)
 	if err != nil {
 		panic(err)
 	}

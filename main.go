@@ -41,7 +41,7 @@ func getInputArgs() *InputArgs {
 	}
 }
 
-//////////////////////
+// ////////////////////
 // Main!
 func main() {
 	// Setup

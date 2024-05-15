@@ -6,27 +6,26 @@ import (
 	"time"
 )
 
-
 // Job holds necessary data to run a db query, including a ref to the query function.
 type Job struct {
-	start  string
-	end    string
-	host   string
+	start string
+	end   string
+	host  string
 	// Function that performs the actual work of the job
-	f func(job Job) time.Duration
+	f      func(job Job) time.Duration
 	jobNum int
 }
 
 // Queue keeps track of running jobs.
 type Queue struct {
 	jobs chan Job
-	stop chan struct {}
+	stop chan struct{}
 	wg   sync.WaitGroup
 }
 
 // Returns an empty queue.
 func NewQueue() *Queue {
-	return &Queue {
+	return &Queue{
 		jobs: make(chan Job),
 		stop: make(chan struct{}),
 	}
@@ -36,11 +35,11 @@ func NewQueue() *Queue {
 func (q *Queue) Start() {
 	for {
 		select {
-		case job := <- q.jobs:
+		case job := <-q.jobs:
 			elapsedTime := job.f(job)
 			fmt.Printf("Job %d: Finished %s at %s, took %s\n", job.jobNum, job.host, time.Now(), elapsedTime)
 			q.wg.Done()
-		case <- q.stop:
+		case <-q.stop:
 			return
 		}
 	}
@@ -59,7 +58,7 @@ func (q *Queue) Stop() {
 
 	   When it's reversed, it errors on
 
-	  	 Start(): elapsedTime := job.f(job)
+	     Start(): elapsedTime := job.f(job)
 
 	   Stop() only runs after Wait() has been called, ensuring that all jobs are finished. This
 	   implies no new jobs are coming in. However that line runs with nil jobs, hence the error.
