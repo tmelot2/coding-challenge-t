@@ -19,6 +19,14 @@ This tool uses Docker to run a Postgres client that connects to the db & sets up
 
 1) Start TimescaleDB instance ([link to official Getting Started docs](https://docs.timescale.com/getting-started/latest/)).
 
+	- To avoid "too many connection" type errors, configure your instance using the Timescale dashboard, Services > Your Instance:
+		- Overview tab > Connect to your service
+			- Use: Connection pooler, pool = Transaction pool
+		- Operations tab > Compute > 8 CPU / 32 GiB Memory
+		- Read scaling > Add read replica
+			- Same CPU & memory, Enable connection pooler
+			- Note I'm not sure if this is needed or not, haven't experimented without it.
+
 2) Edit `.env` & fill in connection & credential details.
 
 	> NOTE: Do not commit credentials to the repo!
@@ -26,14 +34,6 @@ This tool uses Docker to run a Postgres client that connects to the db & sets up
 	> NOTE: Also, storing credentials in a plaintext file is **not** something I would do in production code. Ideally I would encrypt & store this data in a secrets manager, use more appropriate priviledges or a service account, & other security best practices.
 
 3) Run `$ bash setup.sh`
-
-4) To avoid "too many connection" type errors, configure your Timescale instance using the dashboard, Services > Your Instance:
-	- Overview tab > Connect to your service
-		- Use: Connection pooler, pool = Transaction pool
-	- Operations tab > Compute > 8 CPU / 32 GiB Memory
-	- Read scaling > Add read replica
-		- Same CPU & memory, Enable connection pooler
-		- Note I'm not sure if this is needed or not, haven't experimented without it.
 
 
 ## Run
