@@ -83,14 +83,14 @@ Date is `yyyy-mm-dd` (I am pretty sure, I should have asked). The query includes
 
 ### Concurrency Limitations
 
-The requirement for workers to consistently execute queries for the same hostname imposes an upper limit on concurrency efficiency for 2 reasons:
+The requirement for workers to consistently execute queries for the same hostname imposes an upper limit on queue efficiency for 2 reasons:
 
 1) When a host is queried twice, the 2nd query must wait on the 1st to finish, even if other queues are empty.
 2) The # of queues actually used is limited to the # of unique hostnames.
 
 For example, if there's 10 unique hostnames, then at best, only 10 workers will be assigned work, even if there's 100 queues available.
 
-Efficiency could be improved by using a different bucketing method like round-robin, least recently used, or prioritizing open queues. I tested round-robin, as the code change is very simple. Results using default CSV file (200 queries, 10 unique hostnames):
+Efficiency could be improved by using a different bucketing method like round-robin, least recently used, or prioritizing open queues. I tested round-robin, as the code change is tiny. Results using default CSV file (200 queries, 10 unique hostnames):
 
 - Bucketing by hostname:
 	- Concurrency    5:  25s, avg 0.18s
@@ -103,7 +103,7 @@ Efficiency could be improved by using a different bucketing method like round-ro
 	- Concurrency 100: 7.7s, avg 1.10s
 	- Concurrency 200: 7.7s, avg 2.3s
 
-Notice that with 10 or 100 queues, hostname bucketing is the same, & round-robin is much faster, even at 10. It's also apparent that we hit a limit of 0.18s per query on average, based on the server-side load.
+Notice that with 10 or 100 queues, hostname bucketing is the same, & round-robin is much faster, even at 10. It's also apparent that as concurrency scales up, we hit a limit on server-side load due to CPU, memory, IO, network, etc. More stuff is running at once, but the average time creeps, so the total time doesn't really change.
 
 ### Queue Decoupling
 
@@ -126,8 +126,3 @@ If time were no object, I would have begun to add unit tests during refactoring 
 Here's examples of unit tests I wrote for a still-in-development Go JSON parser:
 - [lexer_test.go](https://github.com/tmelot2/go-json-parser/blob/dev/lexer_test.go)
 - [parser_test.go](https://github.com/tmelot2/go-json-parser/blob/dev/parser_test.go)
-
-
-## Usage
-
-Anyone is free to use the code for any purpose. Happy coding!
