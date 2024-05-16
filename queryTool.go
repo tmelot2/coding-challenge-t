@@ -5,6 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/dterei/gotsc"
+    "golang.org/x/text/language"
+    "golang.org/x/text/message"
 	"hash/fnv"
 	"io/ioutil"
 	"os"
@@ -240,15 +243,21 @@ func (queryTool *QueryTool) runQuery(job Job) time.Duration {
 	}
 	defer stmt.Close()
 
+	tsc := gotsc.TSCOverhead()
+
 	// Run the query & time how long it takes
 	queryStart := time.Now()
+	cyclesStart := gotsc.BenchStart()
 	rows, err := stmt.Query(job.start, job.end, job.host)
+	cyclesEnd := gotsc.BenchEnd()
 	defer rows.Close()
 	queryEnd := time.Now()
 
 	if err != nil {
 		panic(err)
 	}
+
+	queryCycles := cyclesEnd - cyclesStart - tsc
 
 	// Optionally print query results
 	if queryTool.outputQueryResults {
@@ -262,9 +271,16 @@ func (queryTool *QueryTool) runQuery(job Job) time.Duration {
 	// NOTE: It seemed to work 100% of the time without this, but the -race flag was correctly letting me know that
 	// race conditions were happening. The overhead on this seems negligable in my tests. Better safe than sorry. Don't
 	// make anybody have to debug race conditions!
+	cyclesStart = gotsc.BenchStart()
 	queryTool.mu.Lock()
 	queryTool.queryTimes = append(queryTool.queryTimes, elapsedTime)
 	queryTool.mu.Unlock()
+	cyclesEnd = gotsc.BenchEnd()
+	queryTimesCycles := cyclesEnd - cyclesStart - tsc
+
+	p := message.NewPrinter(language.English)
+    p.Printf("Db query cycles:    %d\n", queryCycles)
+    p.Printf("Query times cycles: %d\n", queryTimesCycles)
 
 	return elapsedTime
 }
