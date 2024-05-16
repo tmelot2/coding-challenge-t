@@ -78,7 +78,7 @@ func NewCpuBenchmark(capacity int) *CpuBenchmark {
 	}
 }
 
-// Counts cycles for making remote queries.
+// Adds cycle count to the list for the given type.
 // NOTE: This will subtract TSC overhead for you!
 func (b *CpuBenchmark) Add(bt BenchmarkType, cycles uint64) {
 	count := cycles - b.tscOverhead
