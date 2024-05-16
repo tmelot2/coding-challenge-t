@@ -131,6 +131,15 @@ func (b *CpuBenchmark) Print() {
 	}
 	totalCycles += totalCalcQueryStatsCycles
 
+	fmt.Println("[CPU cycle totals]")
+
+	// We should have > 0 measurements, if not, this arch isn't supported & the library just
+	// returned 0 for cycle counts.
+	if totalCycles == 0 {
+		fmt.Println("CPU architecture not supported, only x86 works currently")
+		return
+	}
+
 	// Calculate percents
 	loadEnvPercent        := 100 * float64(totalEnvFileCycles)        / float64(totalCycles)
 	readInputArgPercent   := 100 * float64(totalReadInputArgCycles)   / float64(totalCycles)
@@ -140,7 +149,6 @@ func (b *CpuBenchmark) Print() {
 	// Print with separators because cycle counts are large numbers
 	width := 10
 	p := message.NewPrinter(language.English)
-	fmt.Println("[CPU cycle totals]")
     p.Printf( "   Load env file:  %*d  | %s%%\n", width, totalEnvFileCycles,        alignFloatAsStr(loadEnvPercent))
     p.Printf( " Read input args:  %*d  | %s%%\n", width, totalReadInputArgCycles,   alignFloatAsStr(readInputArgPercent))
     p.Printf( " Parse CSV lines:  %*d  | %s%%\n", width, totalParseCsvCycles,       alignFloatAsStr(parseCsvPercent))
