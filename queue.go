@@ -8,9 +8,9 @@ import (
 
 // Job holds necessary data to run a db query, including a ref to the query function.
 type Job struct {
-	start string
-	end   string
-	host  string
+	start  string
+	end    string
+	host   string
 	// Function that performs the actual work of the job
 	f      func(job Job) time.Duration
 	jobNum int

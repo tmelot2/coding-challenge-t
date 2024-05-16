@@ -3,7 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/dterei/gotsc"
 )
+
+var benchmarker *CpuBenchmark
 
 // App modes:
 //
@@ -44,9 +47,20 @@ func getInputArgs() *InputArgs {
 // ////////////////////
 // Main!
 func main() {
-	// Setup
+	// Create CPU cycle benchmarking tool
+	benchmarker = NewCpuBenchmark(256)
+
+	// Load env file
+	cyclesStart := gotsc.BenchStart()
 	db := NewDatabase("./.env")
+	cyclesEnd := gotsc.BenchEnd()
+	benchmarker.Add(BenchmarkTypeEnvFile, cyclesEnd - cyclesStart)
+
+	// Get input args
+	cyclesStart = gotsc.BenchStart()
 	inputArgs := getInputArgs()
+	cyclesEnd = gotsc.BenchEnd()
+	benchmarker.Add(BenchmarkTypeInputArgs, cyclesEnd - cyclesStart)
 
 	// Create the tool
 	queryTool := NewQueryTool(db, inputArgs.concurrency, inputArgs.outputQueryResults)
@@ -60,4 +74,6 @@ func main() {
 	} else {
 		panic(fmt.Sprintf("Unknown mode %s", mode))
 	}
+
+	benchmarker.Print()
 }

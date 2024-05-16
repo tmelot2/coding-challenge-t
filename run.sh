@@ -4,4 +4,10 @@
 
 set -eo pipefail
 
-go run main.go queryTool.go queue.go database.go "$@"
+go run \
+	main.go \
+	cpuBenchmark.go \
+	database.go \
+	queryTool.go \
+	queue.go \
+		"$@"

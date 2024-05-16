@@ -5,9 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/dterei/gotsc"
-    "golang.org/x/text/language"
-    "golang.org/x/text/message"
 	"hash/fnv"
 	"io/ioutil"
 	"os"
@@ -15,8 +12,11 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/dterei/gotsc"
+
+	_ "github.com/lib/pq"
 )
-import _ "github.com/lib/pq"
 
 const LINE_FORMAT_EXAMPLE string = "" +
 	"Format:  host,startTimestamp,endTimestamp\n" +
@@ -125,6 +125,8 @@ func (queryTool *QueryTool) RunWithCsvFile(filePath string) {
 
 	jobNum := 0
 	for scanner.Scan() {
+		cyclesStart := gotsc.BenchStart()
+
 		line := scanner.Text()
 		parts, err := queryTool.parseLine(line)
 		if err != nil {
@@ -132,6 +134,9 @@ func (queryTool *QueryTool) RunWithCsvFile(filePath string) {
 			continue
 		}
 		host, start, end := parts[0], parts[1], parts[2]
+
+		cyclesEnd := gotsc.BenchEnd()
+		benchmarker.Add(BenchmarkTypeParseCsv, cyclesEnd - cyclesStart)
 
 		// Add job to multiqueue
 		queue := queryTool.getQueue(host)
@@ -170,6 +175,7 @@ func (queryTool *QueryTool) RunWithManualInput(filePath string) {
 			panic(scanner.Err())
 		}
 
+		cyclesStart := gotsc.BenchStart()
 		line := scanner.Text()
 
 		if line == "exit" {
@@ -183,6 +189,9 @@ func (queryTool *QueryTool) RunWithManualInput(filePath string) {
 				continue
 			}
 			host, start, end := parts[0], parts[1], parts[2]
+
+			cyclesEnd := gotsc.BenchEnd()
+			benchmarker.Add(BenchmarkTypeParseCsv, cyclesEnd - cyclesStart)
 
 			// Add job to multiqueue
 			queue := queryTool.getQueue(host)
@@ -243,21 +252,15 @@ func (queryTool *QueryTool) runQuery(job Job) time.Duration {
 	}
 	defer stmt.Close()
 
-	tsc := gotsc.TSCOverhead()
-
 	// Run the query & time how long it takes
-	queryStart := time.Now()
-	cyclesStart := gotsc.BenchStart()
+	queryTimeStart := time.Now()
 	rows, err := stmt.Query(job.start, job.end, job.host)
-	cyclesEnd := gotsc.BenchEnd()
 	defer rows.Close()
-	queryEnd := time.Now()
+	queryTimeEnd := time.Now()
 
 	if err != nil {
 		panic(err)
 	}
-
-	queryCycles := cyclesEnd - cyclesStart - tsc
 
 	// Optionally print query results
 	if queryTool.outputQueryResults {
@@ -265,22 +268,15 @@ func (queryTool *QueryTool) runQuery(job Job) time.Duration {
 	}
 
 	// Calculate runtime & return it
-	elapsedTime := queryEnd.Sub(queryStart)
+	elapsedTime := queryTimeEnd.Sub(queryTimeStart)
 
 	// Use mutex to lock the shared resource to avoid race conditions
 	// NOTE: It seemed to work 100% of the time without this, but the -race flag was correctly letting me know that
 	// race conditions were happening. The overhead on this seems negligable in my tests. Better safe than sorry. Don't
 	// make anybody have to debug race conditions!
-	cyclesStart = gotsc.BenchStart()
 	queryTool.mu.Lock()
 	queryTool.queryTimes = append(queryTool.queryTimes, elapsedTime)
 	queryTool.mu.Unlock()
-	cyclesEnd = gotsc.BenchEnd()
-	queryTimesCycles := cyclesEnd - cyclesStart - tsc
-
-	p := message.NewPrinter(language.English)
-    p.Printf("Db query cycles:    %d\n", queryCycles)
-    p.Printf("Query times cycles: %d\n", queryTimesCycles)
 
 	return elapsedTime
 }
@@ -309,6 +305,8 @@ func (queryTool *QueryTool) printQueryResults(rows *sql.Rows) {
 
 // Prints time stats related to how long the queries took
 func (queryTool *QueryTool) printQueryTimeStats() {
+	cyclesStart := gotsc.BenchStart()
+
 	// Setup
 	numQueries := len(queryTool.queryTimes)
 	var minTime time.Duration
@@ -356,6 +354,9 @@ func (queryTool *QueryTool) printQueryTimeStats() {
 			medianTime = queryTool.queryTimes[numQueries/2]
 		}
 	}
+
+	cyclesEnd := gotsc.BenchEnd()
+	benchmarker.Add(BenchmarkTypeCalcQueryStats, cyclesEnd - cyclesStart)
 
 	// Output
 	fmt.Printf("\n%s\n", strings.Repeat("=", 30))
