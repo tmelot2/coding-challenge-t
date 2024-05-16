@@ -19,11 +19,13 @@ const (
 )
 
 /*
-   CpuBenchmark keeps track of CPU cycles we want to measure in the query tool.
+   CpuBenchmark keeps track of counted CPU cycles we want to measure in the
+   query tool & prints stats.
 
-   It uses the gotsc measuring instrument to count cycles. Cycle measurement is
-   done with assembly RDTSC/P instructions (and other assembly around the RDTRC
-   to make sure the reading is accurate).
+   In code areas we want to benchmark, we insert calls to the gotsc measuring
+   instrument to count cycles. Cycle measurement is done with assembly RDTSC/P
+   instructions (and other assembly around the RDTRC to make sure the reading
+   is accurate).
 */
 type CpuBenchmark struct {
 	tscOverhead	uint64
