@@ -26,6 +26,9 @@ const (
    instrument to count cycles. Cycle measurement is done with assembly RDTSC/P
    instructions (and other assembly around the RDTRC to make sure the reading
    is accurate).
+
+   Currently we only output totals, but because we hold onto arrays of cycle
+   counts, we can easily add other stats like average, min, max, etc.
 */
 type CpuBenchmark struct {
 	tscOverhead	uint64
