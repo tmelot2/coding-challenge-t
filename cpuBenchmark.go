@@ -162,7 +162,7 @@ func (b *CpuBenchmark) Print() {
     p.Printf( " Parse CSV lines:  %*d  | %s%%\n", width, totalParseCsvCycles,       alignFloatAsStr(parseCsvPercent))
     p.Printf( "Calc query stats:  %*d  | %s%%\n", width, totalCalcQueryStatsCycles, alignFloatAsStr(calcQueryStatsPercent))
     p.Println(" =================================================")
-    p.Printf( "    Total cycles:  %*d\n\n", width, totalCycles)
+    p.Printf( "   Total cycles*:  %*d\n\n", width, totalCycles)
 
     p.Printf("* This is not quite a fully accurate cycle measurement (see TODO at top of cpuBenchmark.go).")
     p.Printf("  BUT, it does give a window into how long parts of the app are taking, proportional to each other.")
