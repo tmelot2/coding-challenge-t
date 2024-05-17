@@ -19,16 +19,16 @@ const (
 )
 
 /*
-   CpuBenchmark keeps track of counted CPU cycles we want to measure in the
-   query tool & prints stats.
+   CpuBenchmark keeps track of CPU cycles* we want to measure in the query tool.
 
-   In code areas we want to benchmark, we insert calls to the gotsc measuring
-   instrument to count cycles. Cycle measurement is done with assembly RDTSC/P
-   instructions (and other assembly around the RDTRC to make sure the reading
-   is accurate).
+   It uses the gotsc measuring instrument to count cycles. Cycle measurement is
+   done with assembly RDTSC/P instructions (and other assembly around the RDTRC
+   to make sure the reading is accurate).
 
-   Currently we only output totals, but because we hold onto arrays of cycle
-   counts, we can easily add other stats like average, min, max, etc.
+   * TODO: This doesn't measure *actual* cycles (yet), because modern RDTSC calls
+   use invariant TSC, which does not scale up or down as CPUs adjust frequency. To
+   get a more accurate reading, we need to get a calibration of a known timer,
+   which is not yet implemented.
 */
 type CpuBenchmark struct {
 	tscOverhead	uint64
@@ -162,7 +162,10 @@ func (b *CpuBenchmark) Print() {
     p.Printf( " Parse CSV lines:  %*d  | %s%%\n", width, totalParseCsvCycles,       alignFloatAsStr(parseCsvPercent))
     p.Printf( "Calc query stats:  %*d  | %s%%\n", width, totalCalcQueryStatsCycles, alignFloatAsStr(calcQueryStatsPercent))
     p.Println(" =================================================")
-    p.Printf( "    Total cycles:  %*d\n", width, totalCycles)
+    p.Printf( "    Total cycles:  %*d\n\n", width, totalCycles)
+
+    p.Printf("* This is not quite fully accurate cycle measurement (see TODO at top of cpuBenchmark.go).")
+    p.Printf("  BUT, it does give a window into how long parts of the app are taking.")
 }
 
 func alignFloatAsStr(n float64) string {
