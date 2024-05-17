@@ -164,8 +164,8 @@ func (b *CpuBenchmark) Print() {
     p.Println(" =================================================")
     p.Printf( "    Total cycles:  %*d\n\n", width, totalCycles)
 
-    p.Printf("* This is not quite fully accurate cycle measurement (see TODO at top of cpuBenchmark.go).")
-    p.Printf("  BUT, it does give a window into how long parts of the app are taking.")
+    p.Printf("* This is not quite a fully accurate cycle measurement (see TODO at top of cpuBenchmark.go).")
+    p.Printf("  BUT, it does give a window into how long parts of the app are taking, proportional to each other.")
 }
 
 func alignFloatAsStr(n float64) string {
