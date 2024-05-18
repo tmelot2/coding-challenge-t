@@ -33,9 +33,9 @@ const (
    On my 3.7Ghz AMD PC, counting cycles during a 1 second sleep, I get rougly the
    right value:
 
-	   3,702,649,564
-		3,755,389,486
-		3,739,574,071
+	3,702,649,564
+	3,755,389,486
+	3,739,574,071
 
 	So my cycle counts appear accurate, but it may be less accurate on other PCs.
 */
