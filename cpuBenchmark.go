@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/dterei/gotsc"
 	"golang.org/x/text/language"
-    "golang.org/x/text/message"
+   "golang.org/x/text/message"
 	"strconv"
 	"sync"
 )
@@ -25,10 +25,19 @@ const (
    done with assembly RDTSC/P instructions (and other assembly around the RDTRC
    to make sure the reading is accurate).
 
-   * TODO: This doesn't measure *actual* cycles (yet), because modern RDTSC calls
-   use invariant TSC, which does not scale up or down as CPUs adjust frequency. To
-   get a more accurate reading, we need to get a calibration of a known timer,
-   which is not yet implemented.
+   * TODO: This doesn't necessarily measure exact cycles (yet), because modern RDTSC
+   calls use invariant TSC, which does not scale up or down as CPUs adjust frequency.
+   To get a more accurate reading, we need to get a calibration of a known timer, which
+   is not yet implemented.
+
+   On my 3.7Ghz AMD PC, counting cycles during a 1 second sleep, I get rougly the
+   right value:
+
+	   3,702,649,564
+		3,755,389,486
+		3,739,574,071
+
+	So my cycle counts appear accurate, but it may be less accurate on other PCs.
 */
 type CpuBenchmark struct {
 	tscOverhead	uint64
@@ -157,15 +166,15 @@ func (b *CpuBenchmark) Print() {
 	// Print with separators because cycle counts are large numbers
 	width := 10
 	p := message.NewPrinter(language.English)
-    p.Printf( "   Load env file:  %*d  | %s%%\n", width, totalEnvFileCycles,        alignFloatAsStr(loadEnvPercent))
-    p.Printf( " Read input args:  %*d  | %s%%\n", width, totalReadInputArgCycles,   alignFloatAsStr(readInputArgPercent))
-    p.Printf( " Parse CSV lines:  %*d  | %s%%\n", width, totalParseCsvCycles,       alignFloatAsStr(parseCsvPercent))
-    p.Printf( "Calc query stats:  %*d  | %s%%\n", width, totalCalcQueryStatsCycles, alignFloatAsStr(calcQueryStatsPercent))
-    p.Println(" =================================================")
-    p.Printf( "   Total cycles*:  %*d\n\n", width, totalCycles)
+	p.Printf( "   Load env file:  %*d  | %s%%\n", width, totalEnvFileCycles,        alignFloatAsStr(loadEnvPercent))
+	p.Printf( " Read input args:  %*d  | %s%%\n", width, totalReadInputArgCycles,   alignFloatAsStr(readInputArgPercent))
+	p.Printf( " Parse CSV lines:  %*d  | %s%%\n", width, totalParseCsvCycles,       alignFloatAsStr(parseCsvPercent))
+	p.Printf( "Calc query stats:  %*d  | %s%%\n", width, totalCalcQueryStatsCycles, alignFloatAsStr(calcQueryStatsPercent))
+	p.Println(" =================================================")
+	p.Printf( "   Total cycles*:  %*d\n\n", width, totalCycles)
 
-    p.Printf("* This is not quite a fully accurate cycle measurement (see TODO at top of cpuBenchmark.go).")
-    p.Printf("  BUT, it does give a window into how long parts of the app are taking, proportional to each other.")
+	p.Printf("* This is not quite a fully accurate cycle measurement (see TODO at top of cpuBenchmark.go).")
+	p.Printf("  BUT, it does give a window into how long parts of the app are taking, proportional to each other.")
 }
 
 func alignFloatAsStr(n float64) string {
